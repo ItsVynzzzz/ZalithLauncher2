@@ -213,6 +213,7 @@
     <string name="download_game_install_forgelike_analyse">分析 %s 支持库</string>
     <string name="download_game_install_forgelike_preparing_mapping_file">准备 %s 映射文件中</string>
     <string name="download_game_install_game_files_progress">安装游戏文件</string>
+    <string name="download_game_modify_prepare_files">准备原版文件：%s</string>
     <string name="download_install">安装</string>
     <string name="download_install_error_title">安装失败</string>
     <string name="download_install_error_message">您的游戏在安装过程中出现了异常：</string>

@@ -20,6 +20,7 @@ package com.movtery.zalithlauncher.game.download.game
 
 import android.content.Context
 import android.content.Intent
+import com.google.gson.JsonParser
 import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.context.GlobalContext
 import com.movtery.zalithlauncher.coroutine.Task
@@ -28,6 +29,7 @@ import com.movtery.zalithlauncher.coroutine.TaskLogOutput
 import com.movtery.zalithlauncher.coroutine.TitledTask
 import com.movtery.zalithlauncher.coroutine.addTask
 import com.movtery.zalithlauncher.coroutine.buildPhase
+import com.movtery.zalithlauncher.game.addons.mirror.mapBMCLMirrorUrls
 import com.movtery.zalithlauncher.game.addons.modloader.ModLoader
 import com.movtery.zalithlauncher.game.addons.modloader.cleanroom.CleanroomVersion
 import com.movtery.zalithlauncher.game.addons.modloader.fabriclike.FabricLikeVersion
@@ -152,6 +154,39 @@ class GameInstaller(
     }
 
     /**
+     * 修改已安装的版本：按当前 info 描述的 Minecraft 版本与加载器组合，原地重建该版本
+     * @param currentGameVersion 版本当前的 Minecraft 版本；与 info.gameVersion 一致时复用现有版本文件，不再下载原版
+     * @param isRunning 正在运行中，阻止此次修改时
+     * @param onModified 版本已完成修改
+     * @param onError 版本修改失败
+     */
+    fun modifyVersion(
+        currentGameVersion: String,
+        isRunning: () -> Unit = {},
+        onModified: () -> Unit,
+        onError: (th: Throwable) -> Unit
+    ) {
+        if (taskExecutor.isRunning()) {
+            //正在修改中，阻止这次修改请求
+            isRunning()
+            return
+        }
+
+        taskExecutor.executePhasesAsync(
+            onStart = {
+                val tasks = getModifyTaskPhase(currentGameVersion)
+                taskExecutor.addPhases(tasks)
+            },
+            onComplete = {
+                onModified()
+            },
+            onError = {
+                onError(it)
+            }
+        )
+    }
+
+    /**
      * 安装过程中所需的所有文件路径配置
      */
     private class InstallationPathConfig(
@@ -173,14 +208,14 @@ class GameInstaller(
     /**
      * 构建安装过程中使用的所有路径配置
      */
-    private fun createPathConfig(): InstallationPathConfig {
+    private fun createPathConfig(checkVersionExists: Boolean = true): InstallationPathConfig {
         //目标版本目录
         val targetClientDir1 = File(getVersionsHome(targetGameFolder.absolutePath), info.customVersionName)
         targetClientDir = targetClientDir1
         val targetVersionJson = File(targetClientDir1, "${info.customVersionName}.json")
 
         //目标版本已经安装的情况，退出
-        if (targetVersionJson.exists()) {
+        if (checkVersionExists && targetVersionJson.exists()) {
             Logger.debug(TAG, "The game has already been installed!")
             throw GameAlreadyInstalledException()
         }
@@ -316,6 +351,151 @@ class GameInstaller(
                 )
             }
         )
+    }
+
+    /**
+     * 获取修改版本的任务流阶段
+     * @param currentGameVersion 版本当前的 Minecraft 版本
+     */
+    private suspend fun getModifyTaskPhase(
+        currentGameVersion: String
+    ): List<TaskFlowExecutor.TaskPhase> = withContext(Dispatchers.IO) {
+        val pathConfig = createPathConfig(checkVersionExists = false)
+        val tempOutputDir = File(PathManager.DIR_CACHE_GAME_DOWNLOADER, "modified/${info.customVersionName}")
+
+        listOf(
+            buildPhase {
+                //开始之前，应该先清理一次临时游戏目录，否则可能会影响安装结果
+                addTask(
+                    id = "ModifyVersion.ClearTemp",
+                    title = androidText(R.string.download_install_clear_temp),
+                    icon = R.drawable.ic_auto_delete_outlined,
+                ) {
+                    clearTempGameDir()
+                    //清理完成缓存目录后，创建新的缓存目录
+                    pathConfig.tempClientDir.createDirAndLog()
+                    pathConfig.optifineDir?.createDirAndLog()
+                    pathConfig.forgeDir?.createDirAndLog()
+                    pathConfig.neoforgeDir?.createDirAndLog()
+                    pathConfig.fabricDir?.createDirAndLog()
+                    pathConfig.legacyFabricDir?.createDirAndLog()
+                    pathConfig.quiltDir?.createDirAndLog()
+                    pathConfig.cleanroomDir?.createDirAndLog()
+                    pathConfig.tempModsDir.createDirAndLog()
+                }
+
+                if (currentGameVersion != info.gameVersion) {
+                    //Minecraft 版本发生变更，下载全新的原版文件
+                    //Json/Jar 进入临时目录，libraries/assets 直接进入游戏目录
+                    addTask(
+                        title = androidText(R.string.download_game_install_vanilla, info.gameVersion),
+                        task = createMinecraftDownloadTask(info.gameVersion, pathConfig.tempGameVersionsDir)
+                    )
+                } else {
+                    //Minecraft 版本未变更，无需重新下载原版，仅准备干净的合并基底
+                    addTask(
+                        id = "ModifyVersion.PrepareVanilla",
+                        title = androidText(R.string.download_game_modify_prepare_files, info.gameVersion)
+                    ) { task ->
+                        prepareVanillaBase(task, pathConfig.tempGameVersionsDir)
+                    }
+                }
+
+                //下载加载器/模组
+                addLoaderTasks(
+                    tempGameDir = pathConfig.tempGameDir,
+                    tempMinecraftDir = pathConfig.tempMinecraftDir,
+                    forgeDir = pathConfig.forgeDir,
+                    neoforgeDir = pathConfig.neoforgeDir,
+                    fabricDir = pathConfig.fabricDir,
+                    legacyFabricDir = pathConfig.legacyFabricDir,
+                    quiltDir = pathConfig.quiltDir,
+                    cleanroomDir = pathConfig.cleanroomDir,
+                    tempModsDir = pathConfig.tempModsDir
+                )
+
+                //最终修改任务：合并版本 Json、迁移游戏文件，全部成功后才替换目标版本文件
+                addTask(
+                    title = androidText(R.string.download_game_install_game_files_progress),
+                    icon = R.drawable.ic_build_outlined,
+                    task = createVersionModifiedTask(
+                        pathConfig = pathConfig,
+                        tempOutputDir = tempOutputDir,
+                        onComplete = {
+                            targetClientDir = null
+                        }
+                    )
+                )
+            }
+        )
+    }
+
+    /**
+     * 准备原版基底文件（仅 Minecraft 版本未变更时使用）
+     * 拉取干净的原版 Json 作为合并基底（现有版本 Json 混有旧加载器信息，不能直接使用），
+     * 原版 Jar 优先复用本地已有的文件，缺失时才下载
+     */
+    private suspend fun prepareVanillaBase(task: Task, tempVersionsDir: File) {
+        val clientVersion = info.gameVersion
+
+        task.updateProgress(-1f)
+        val manifest = downloader.findVersion(clientVersion)?.let {
+            downloader.createVersionJson(it, clientVersion, tempVersionsDir)
+        } ?: error("Version not found: $clientVersion")
+
+        val tempJarFile = downloader.getVersionJarPath(clientVersion, tempVersionsDir)
+        if (tempJarFile.exists()) {
+            task.updateProgress(1f)
+            return
+        }
+
+        //优先复用原版版本的 Jar，其次复用当前版本自身的 Jar（仅限启动器安装的版本）
+        val vanillaJar = downloader.getVersionJarPath(clientVersion, downloader.versionsTarget)
+        val ownVersionDir = File(getVersionsHome(targetGameFolder.absolutePath), info.customVersionName)
+        val ownJar = File(ownVersionDir, "${info.customVersionName}.jar")
+        val ownJarTrusted = runCatching {
+            //带 inheritsFrom/jar 引用的外部导入版本，自身的 Jar 不一定是原版 Jar
+            val json = JsonParser.parseString(File(ownVersionDir, "${info.customVersionName}.json").readText()).asJsonObject
+            !json.has("inheritsFrom") && !json.has("jar")
+        }.getOrDefault(false)
+
+        val sourceJar = vanillaJar.takeIf { it.exists() }
+            ?: ownJar.takeIf { it.exists() && ownJarTrusted }
+        if (sourceJar != null) {
+            sourceJar.copyTo(tempJarFile)
+            task.updateProgress(1f)
+            return
+        }
+
+        //本地没有可复用的原版 Jar，直接下载
+        val client = manifest.downloads?.client
+            ?: error("Unable to cache the vanilla Jar file: $clientVersion")
+        val urls = client.url.mapBMCLMirrorUrls()
+        val sizeConfig = object {
+            val totalSize = client.size
+            var downloadedSize: Long = 0L
+        }
+        withSpeedReport(
+            onSpeedReport = { bytes ->
+                task.updateSpeed(bytes)
+            },
+            onClear = {
+                task.clearSpeed()
+            }
+        ) { report ->
+            downloadFileFromSources(
+                urls = urls,
+                outputFile = tempJarFile,
+                sizeCallback = { downloaded ->
+                    sizeConfig.downloadedSize += downloaded
+                    task.updateProgress(
+                        (sizeConfig.downloadedSize.toFloat() / sizeConfig.totalSize.toFloat())
+                            .coerceIn(0f, 1f)
+                    )
+                    report(downloaded)
+                }
+            )
+        }
     }
 
     private fun MutableList<TitledTask>.addLoaderTasks(
@@ -818,6 +998,120 @@ class GameInstaller(
             onComplete()
         }
     )
+
+    /**
+     * 版本修改的最终任务：合并版本 Json、迁移游戏文件，全部成功后才替换目标版本的 Json/Jar
+     * @param tempOutputDir 合并结果的临时输出目录
+     */
+    private fun createVersionModifiedTask(
+        pathConfig: InstallationPathConfig,
+        tempOutputDir: File,
+        onComplete: suspend () -> Unit = {}
+    ) = Task.runTask(
+        id = GAME_JSON_MERGER_ID,
+        dispatcher = Dispatchers.IO,
+        task = { task ->
+            val targetClientDir = pathConfig.targetClientDir
+
+            //合并版本 Json 到临时目录，避免直接破坏目标版本
+            task.updateProgress(0.1f)
+            mergeGameJson(
+                info = info,
+                outputFolder = tempOutputDir,
+                clientFolder = pathConfig.tempClientDir,
+                optiFineFolder = pathConfig.optifineDir,
+                forgeFolder = pathConfig.forgeDir,
+                neoForgeFolder = pathConfig.neoforgeDir,
+                fabricFolder = pathConfig.fabricDir,
+                legacyFabricFolder = pathConfig.legacyFabricDir,
+                quiltFolder = pathConfig.quiltDir,
+                cleanroomFolder = pathConfig.cleanroomDir
+            )
+
+            //迁移游戏库
+            copyDirectoryContents(
+                File(pathConfig.tempMinecraftDir, "libraries"),
+                File(targetGameFolder, "libraries"),
+                onProgress = { percentage ->
+                    task.updateProgress(percentage)
+                }
+            )
+
+            //复制新增的Mods（不覆盖已存在的文件）
+            pathConfig.tempModsDir.listFiles()?.forEach { modFile ->
+                val targetModsDir = VersionFolders.MOD.getDir(targetClientDir)
+                val targetMod = File(targetModsDir, modFile.name)
+                if (!targetMod.exists()) {
+                    modFile.copyTo(targetMod)
+                }
+            }
+
+            //替换目标版本的 Json/Jar
+            task.updateProgress(-1f)
+            swapVersionFiles(targetClientDir, tempOutputDir)
+
+            //清除临时游戏目录
+            task.updateMessage(androidText(R.string.download_install_clear_temp))
+            clearTempGameDir()
+
+            onComplete()
+        }
+    )
+
+    /**
+     * 将修改后的版本 Json/Jar 替换进目标版本目录
+     * 替换前会备份原文件，替换失败时自动还原，保证目标版本不被破坏
+     */
+    private fun swapVersionFiles(targetClientDir: File, tempOutputDir: File) {
+        val targetJson = File(targetClientDir, "${info.customVersionName}.json")
+        val targetJar = File(targetClientDir, "${info.customVersionName}.jar")
+        val newJson = File(tempOutputDir, "${info.customVersionName}.json")
+        val newJar = File(tempOutputDir, "${info.customVersionName}.jar")
+        val backupJson = File(PathManager.DIR_CACHE, "modify_${info.customVersionName}_json")
+        val backupJar = File(PathManager.DIR_CACHE, "modify_${info.customVersionName}_jar")
+
+        //备份原 Json/Jar，替换失败时用于还原
+        runCatching {
+            targetJson.takeIf { it.exists() }?.let {
+                backupJson.delete()
+                it.copyTo(backupJson)
+            }
+            targetJar.takeIf { it.exists() }?.let {
+                backupJar.delete()
+                it.copyTo(backupJar)
+            }
+        }.onFailure {
+            FileUtils.deleteQuietly(backupJson)
+            FileUtils.deleteQuietly(backupJar)
+            throw it
+        }
+
+        try {
+            FileUtils.deleteQuietly(targetJson)
+            FileUtils.deleteQuietly(targetJar)
+            FileUtils.moveFile(newJson, targetJson)
+            FileUtils.moveFile(newJar, targetJar)
+        } catch (e: Exception) {
+            //替换失败，还原原版本文件
+            runCatching {
+                if (backupJson.exists()) {
+                    FileUtils.deleteQuietly(targetJson)
+                    FileUtils.moveFile(backupJson, targetJson)
+                }
+                if (backupJar.exists()) {
+                    FileUtils.deleteQuietly(targetJar)
+                    FileUtils.moveFile(backupJar, targetJar)
+                }
+            }.onFailure { restoreError ->
+                Logger.error(TAG, "Failed to revert version files: ${restoreError.message}", restoreError)
+            }
+            throw e
+        }
+
+        //替换成功，清理备份
+        FileUtils.deleteQuietly(backupJson)
+        FileUtils.deleteQuietly(backupJar)
+    }
 
     /**
      * 仅原本客户端文件复制任务 json、jar
