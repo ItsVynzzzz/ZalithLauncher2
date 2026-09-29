@@ -117,6 +117,14 @@ sealed interface NormalNavKey : TitledNavKey {
         @Serializable data object Config : Versions {
             @Contextual override val title: AndroidStringText = androidText(R.string.versions_settings_config)
         }
+        /** 修改版本屏幕 */
+        @Serializable data object ModifyVersion : Versions {
+            @Contextual override val title: AndroidStringText = androidText(R.string.versions_modify_version)
+        }
+        /** 选择要修改的 Minecraft 版本屏幕 */
+        @Serializable data object SelectGameVersion : Versions {
+            @Contextual override val title: AndroidStringText = androidText(R.string.versions_modify_select_mc)
+        }
         /** 模组管理屏幕 */
         @Serializable data object ModsManager : Versions {
             @Contextual override var title: AndroidStringText = androidText(R.string.mods_manage)

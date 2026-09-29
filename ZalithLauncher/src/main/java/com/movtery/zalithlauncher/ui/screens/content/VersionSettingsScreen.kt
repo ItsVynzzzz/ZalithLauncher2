@@ -45,6 +45,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -55,6 +56,7 @@ import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.game.download.assets.platform.PlatformClasses
 import com.movtery.zalithlauncher.game.version.installed.Version
 import com.movtery.zalithlauncher.game.version.installed.VersionsManager
+import com.movtery.zalithlauncher.notification.NotificationManager
 import com.movtery.zalithlauncher.ui.base.BaseScreen
 import com.movtery.zalithlauncher.ui.components.fadeEdge
 import com.movtery.zalithlauncher.ui.screens.NestedNavKey
@@ -62,6 +64,7 @@ import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
 import com.movtery.zalithlauncher.ui.screens.content.elements.CategoryIcon
 import com.movtery.zalithlauncher.ui.screens.content.elements.CategoryItem
+import com.movtery.zalithlauncher.ui.screens.content.versions.ModifyVersionScreen
 import com.movtery.zalithlauncher.ui.screens.content.versions.ModsManagerScreen
 import com.movtery.zalithlauncher.ui.screens.content.versions.ResourcePackManageScreen
 import com.movtery.zalithlauncher.ui.screens.content.versions.SavesManagerScreen
@@ -76,18 +79,24 @@ import com.movtery.zalithlauncher.ui.screens.rememberTransitionSpec
 import com.movtery.zalithlauncher.utils.animation.swapAnimateDpAsState
 import com.movtery.zalithlauncher.viewmodel.ErrorViewModel
 import com.movtery.zalithlauncher.viewmodel.EventViewModel
+import com.movtery.zalithlauncher.viewmodel.ModifyOperation
+import com.movtery.zalithlauncher.viewmodel.ModifyPayload
+import com.movtery.zalithlauncher.viewmodel.ModifyVersionViewModel
 import com.movtery.zalithlauncher.viewmodel.ScreenBackStackViewModel
 import com.movtery.zalithlauncher.viewmodel.sendToast
 
 @Composable
 fun VersionSettingsScreen(
     key: NestedNavKey.VersionSettings,
+    modifyViewModel: ModifyVersionViewModel,
     backScreenViewModel: ScreenBackStackViewModel,
     backToMainScreen: () -> Unit,
     onExportModpack: () -> Unit,
     eventViewModel: EventViewModel,
     submitError: (ErrorViewModel.ThrowableMessage) -> Unit
 ) {
+    val context = LocalContext.current
+
     val cBackToMainScreen by rememberUpdatedState(backToMainScreen)
     DisposableEffect(key) {
         val listener = object : suspend () -> Unit {
@@ -116,6 +125,7 @@ fun VersionSettingsScreen(
             NavigationUI(
                 modifier = Modifier.fillMaxHeight(),
                 key = key,
+                modifyViewModel = modifyViewModel,
                 backScreenViewModel = backScreenViewModel,
                 versionsScreenKey = key.currentKey,
                 onCurrentKeyChange = { newKey ->
@@ -124,6 +134,18 @@ fun VersionSettingsScreen(
                 backToMainScreen = backToMainScreen,
                 onExport = onExportModpack,
                 version = key.version,
+                onModify = { payload ->
+                    if (modifyViewModel.installOperation !is ModifyOperation.None) {
+                        //不是待修改状态，拒绝此次修改
+                        return@NavigationUI
+                    }
+                    if (!NotificationManager.checkNotificationEnabled(context)) {
+                        //警告通知权限
+                        modifyViewModel.installOperation = ModifyOperation.WarningForNotification(payload)
+                    } else {
+                        modifyViewModel.installOperation = ModifyOperation.Confirm(payload)
+                    }
+                },
                 eventViewModel = eventViewModel,
                 submitError = submitError
             )
@@ -134,6 +156,7 @@ fun VersionSettingsScreen(
 private val settingItems = listOf(
     CategoryItem(NormalNavKey.Versions.OverView, { CategoryIcon(R.drawable.ic_dashboard_outlined, R.string.versions_settings_overview) }, R.string.versions_settings_overview),
     CategoryItem(NormalNavKey.Versions.Config, { CategoryIcon(R.drawable.ic_build_outlined, R.string.versions_settings_config) }, R.string.versions_settings_config),
+    CategoryItem(NormalNavKey.Versions.ModifyVersion, { CategoryIcon(R.drawable.ic_edit_outlined, R.string.versions_modify_version) }, R.string.versions_modify_version),
     CategoryItem(NormalNavKey.Versions.ModsManager, { CategoryIcon(R.drawable.ic_extension_outlined, R.string.mods_manage) }, R.string.mods_manage, division = true),
     CategoryItem(NormalNavKey.Versions.SavesManager, { CategoryIcon(R.drawable.ic_public, R.string.saves_manage) }, R.string.saves_manage),
     CategoryItem(NormalNavKey.Versions.ResourcePackManager, { CategoryIcon(R.drawable.ic_format_paint_outlined, R.string.resource_pack_manage) }, R.string.resource_pack_manage),
@@ -204,12 +227,14 @@ private fun TabMenu(
 private fun NavigationUI(
     modifier: Modifier = Modifier,
     key: NestedNavKey.VersionSettings,
+    modifyViewModel: ModifyVersionViewModel,
     backScreenViewModel: ScreenBackStackViewModel,
     versionsScreenKey: TitledNavKey?,
     onCurrentKeyChange: (TitledNavKey?) -> Unit,
     backToMainScreen: () -> Unit,
     onExport: () -> Unit,
     version: Version,
+    onModify: (ModifyPayload) -> Unit,
     eventViewModel: EventViewModel,
     submitError: (ErrorViewModel.ThrowableMessage) -> Unit
 ) {
@@ -257,6 +282,16 @@ private fun NavigationUI(
                             eventViewModel.sendToast(text)
                         },
                         submitError = submitError
+                    )
+                }
+                entry<NormalNavKey.Versions.ModifyVersion> {
+                    ModifyVersionScreen(
+                        viewModel = modifyViewModel,
+                        mainScreenKey = mainScreenKey,
+                        versionsScreenKey = versionsScreenKey,
+                        version = version,
+                        eventViewModel = eventViewModel,
+                        onModify = onModify
                     )
                 }
                 entry(NormalNavKey.Versions.ModsManager) {

@@ -63,6 +63,7 @@ import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
 import com.movtery.zalithlauncher.ui.screens.content.download.game.DownloadGameWithAddonScreen
+import com.movtery.zalithlauncher.ui.screens.content.download.game.SelectGameVersionHost
 import com.movtery.zalithlauncher.ui.screens.content.download.game.SelectGameVersionScreen
 import com.movtery.zalithlauncher.ui.screens.content.elements.TitleTaskFlowDialog
 import com.movtery.zalithlauncher.ui.screens.navigateTo
@@ -228,9 +229,11 @@ fun DownloadGameScreen(
             entryProvider = entryProvider {
                 entry<NormalNavKey.DownloadGame.SelectGameVersion> {
                     SelectGameVersionScreen(
-                        mainScreenKey = mainScreenKey,
-                        downloadScreenKey = downloadScreenKey,
-                        downloadGameScreenKey = downloadGameScreenKey,
+                        host = SelectGameVersionHost.Download(
+                            mainScreenKey = mainScreenKey,
+                            downloadScreenKey = downloadScreenKey,
+                            downloadGameScreenKey = downloadGameScreenKey
+                        ),
                         eventViewModel = eventViewModel,
                     ) { versionString ->
                         backStack.navigateTo(
