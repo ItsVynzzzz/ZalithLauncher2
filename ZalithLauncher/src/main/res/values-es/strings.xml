@@ -591,14 +591,6 @@
     <string name="versions_config_failed_to_save">Error al guardar los ajustes</string>
     <string name="versions_config_microphone_check_title">Comprobar micrófono</string>
     <string name="versions_config_microphone_check_summary">Comprueba si el micrófono del sistema está disponible o confirma que se ha concedido permiso de micrófono al launcher. Esta comprobación asegura que puedes usar mods como Simple Voice Chat que requieren un micrófono.</string>
-    <string name="versions_update_loader">Actualizar cargador</string>
-    <string name="versions_update_loader_waiting_for_others">Esperando a que otros elementos terminen de cargarse</string>
-    <string name="versions_update_loader_diff_message">¿Seguro que deseas cambiar el cargador del juego actual?</string>
-    <string name="versions_update_loader_diff_change">Cambiar: %1$s %2$s → %3$s</string>
-    <string name="versions_update_loader_diff_remove">Eliminar: %s</string>
-    <string name="versions_update_loader_diff_load">Cargar: %1$s %2$s</string>
-    <string name="versions_update_loader_error_message">Ocurrió un error al instalar el cargador:</string>
-    <string name="versions_update_loader_success_message">¡La versión del cargador del juego se ha actualizado correctamente!</string>
     <string name="manage_only_show_valid">Disponible</string>
     <string name="manage_delete_all">Eliminar todo</string>
     <string name="manage_delete_all_message">¿Seguro que deseas eliminar todos los archivos de recursos seleccionados? Esta acción no se puede deshacer. Por favor, procede con precaución.</string>

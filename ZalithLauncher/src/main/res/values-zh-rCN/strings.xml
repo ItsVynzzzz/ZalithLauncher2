@@ -190,9 +190,6 @@
     <string name="download_game_type_old_alpha">Alpha 版</string>
     <string name="download_game_type_old_beta">Beta 版</string>
     <string name="download_game_version_name">版本名称</string>
-    <string name="download_game_version_overwrite">将会覆盖安装到已存在版本：%s</string>
-    <string name="download_game_version_overwrite_select">覆盖的版本</string>
-    <string name="download_game_version_overwrite_select_subtitle">选择要覆盖的版本，您可以利用这个功能升级/降级目标版本</string>
     <string name="download_game_addon_list_load_error">列表加载出错：%s</string>
     <string name="download_game_addon_available">可以选择</string>
     <string name="download_game_addon_unavailable">不可用</string>
@@ -718,15 +715,6 @@
     <string name="versions_config_failed_to_save">保存版本配置时出现异常</string>
     <string name="versions_config_microphone_check_title">检查麦克风</string>
     <string name="versions_config_microphone_check_summary">检查系统麦克风是否可用，或确认启动器是否已获得麦克风权限。这项检查将确保您可以使用像“简单的语音聊天”这样的需要使用麦克风的模组。</string>
-    <string name="versions_install_loader">安装加载器</string>
-    <string name="versions_update_loader">更新加载器</string>
-    <string name="versions_update_loader_waiting_for_others">等待其他项完成加载</string>
-    <string name="versions_update_loader_diff_message">你确定要变更当前游戏的加载器吗？</string>
-    <string name="versions_update_loader_diff_change">变更：%1$s %2$s → %3$s</string>
-    <string name="versions_update_loader_diff_remove">移除：%s</string>
-    <string name="versions_update_loader_diff_load">载入：%1$s %2$s</string>
-    <string name="versions_update_loader_error_message">在安装加载器的过程中出现了异常：</string>
-    <string name="versions_update_loader_success_message">已成功变更该游戏的加载器版本！</string>
     <string name="versions_export">导出整合包</string>
     <string name="versions_export_type_mcbbs">MCBBS 整合包</string>
     <string name="versions_export_type_mcbbs_summary">可被 %s，HMCL 等启动器导入</string>

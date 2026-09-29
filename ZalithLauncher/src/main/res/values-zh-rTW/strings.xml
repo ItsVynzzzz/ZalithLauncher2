@@ -175,9 +175,6 @@
     <string name="download_game_type_old_alpha">Alpha 版</string>
     <string name="download_game_type_old_beta">Beta 版</string>
     <string name="download_game_version_name">版本名稱</string>
-    <string name="download_game_version_overwrite">將會覆蓋安裝到已存在版本：%s</string>
-    <string name="download_game_version_overwrite_select">覆蓋的版本</string>
-    <string name="download_game_version_overwrite_select_subtitle">選擇要覆蓋的版本，您可以使用這個功能升級/降級目標版本</string>
     <string name="download_game_addon_list_load_error">列表載入錯誤：%s</string>
     <string name="download_game_addon_available">可選擇</string>
     <string name="download_game_addon_unavailable">不可用</string>
@@ -664,15 +661,6 @@
     <string name="versions_config_failed_to_save">儲存版本組態時發生異常</string>
     <string name="versions_config_microphone_check_title">檢查麥克風</string>
     <string name="versions_config_microphone_check_summary">檢查系統麥克風是否可用，或確認啟動器是否已獲得麥克風權限。此檢查將確保您可以使用像 Simple Voice Chat 這樣需要使用麥克風的模組。</string>
-    <string name="versions_install_loader">安裝載入器</string>
-    <string name="versions_update_loader">更新載入器</string>
-    <string name="versions_update_loader_waiting_for_others">等待其他項目完成加載</string>
-    <string name="versions_update_loader_diff_message">您確定要變更當前遊戲的載入器嗎？</string>
-    <string name="versions_update_loader_diff_change">變更：%1$s %2$s → %3$s</string>
-    <string name="versions_update_loader_diff_remove">移除：%s</string>
-    <string name="versions_update_loader_diff_load">載入：%1$s %2$s</string>
-    <string name="versions_update_loader_error_message">安裝載入器時出現異常：</string>
-    <string name="versions_update_loader_success_message">已成功變更該遊戲的載入器版本！</string>
     <string name="versions_export">匯出模組包</string>
     <string name="versions_export_type_mcbbs">MCBBS 模組包</string>
     <string name="versions_export_type_mcbbs_summary">可被 %s、HMCL 等啟動器匯入</string>

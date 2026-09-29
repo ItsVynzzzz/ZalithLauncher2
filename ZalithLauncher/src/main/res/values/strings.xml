@@ -190,9 +190,6 @@
     <string name="download_game_type_old_alpha">Alpha</string>
     <string name="download_game_type_old_beta">Beta</string>
     <string name="download_game_version_name">Version Name</string>
-    <string name="download_game_version_overwrite">Will overwrite existing version: %s</string>
-    <string name="download_game_version_overwrite_select">Version to overwrite</string>
-    <string name="download_game_version_overwrite_select_subtitle">Select the version to overwrite. You can use this feature to upgrade/downgrade the target version</string>
     <string name="download_game_addon_list_load_error">Failed to load list: %s</string>
     <string name="download_game_addon_available">Available</string>
     <string name="download_game_addon_unavailable">Unavailable</string>
@@ -719,15 +716,6 @@
     <string name="versions_config_failed_to_save">Failed to save version configuration</string>
     <string name="versions_config_microphone_check_title">Check Microphone</string>
     <string name="versions_config_microphone_check_summary">Check whether the system microphone is available or confirm that the launcher has been granted microphone permission. This check ensures that you can use mods like Simple Voice Chat that require a microphone.</string>
-    <string name="versions_install_loader">Install Loader</string>
-    <string name="versions_update_loader">Update Loader</string>
-    <string name="versions_update_loader_waiting_for_others">Waiting for other tasks to finish</string>
-    <string name="versions_update_loader_diff_message">Are you sure you want to change the current game\'s loader?</string>
-    <string name="versions_update_loader_diff_change">Change: %1$s %2$s → %3$s</string>
-    <string name="versions_update_loader_diff_remove">Remove: %s</string>
-    <string name="versions_update_loader_diff_load">Load: %1$s %2$s</string>
-    <string name="versions_update_loader_error_message">An error occurred while installing the loader:</string>
-    <string name="versions_update_loader_success_message">The game\'s loader version has been successfully updated!</string>
     <string name="versions_export">Export Modpack</string>
     <string name="versions_export_type_mcbbs">MCBBS Modpack</string>
     <string name="versions_export_type_mcbbs_summary">Can be imported by %s, HMCL, and other launchers</string>

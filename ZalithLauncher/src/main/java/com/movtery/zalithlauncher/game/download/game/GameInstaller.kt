@@ -28,7 +28,6 @@ import com.movtery.zalithlauncher.coroutine.TaskLogOutput
 import com.movtery.zalithlauncher.coroutine.TitledTask
 import com.movtery.zalithlauncher.coroutine.addTask
 import com.movtery.zalithlauncher.coroutine.buildPhase
-import com.movtery.zalithlauncher.game.addons.mirror.mapBMCLMirrorUrls
 import com.movtery.zalithlauncher.game.addons.modloader.ModLoader
 import com.movtery.zalithlauncher.game.addons.modloader.cleanroom.CleanroomVersion
 import com.movtery.zalithlauncher.game.addons.modloader.fabriclike.FabricLikeVersion
@@ -113,8 +112,6 @@ class GameInstaller(
      * versions/<client-name>/...
      */
     private var targetClientDir: File? = null
-    private val overrideClientJar: File get() = File(PathManager.DIR_CACHE, "override_${info.customVersionName}_jar")
-    private val overrideClientJson: File get() = File(PathManager.DIR_CACHE, "override_${info.customVersionName}_json")
 
     /**
      * 安装 Minecraft 游戏
@@ -146,52 +143,9 @@ class GameInstaller(
                 taskExecutor.addPhases(tasks)
             },
             onComplete = {
-                if (info.overwrite) {
-                    clearBackupFiles()
-                }
                 onInstalled(info.customVersionName)
             },
             onError = {
-                if (info.overwrite) {
-                    revertClientDir()
-                }
-                onError(it)
-            }
-        )
-    }
-
-    /**
-     * 更新加载器
-     * @param isRunning 正在运行中，阻止此次安装时
-     * @param onInstalled 加载器已完成安装
-     * @param onError 加载器安装失败
-     */
-    fun updateLoader(
-        isRunning: () -> Unit = {},
-        onInstalled: () -> Unit,
-        onError: (th: Throwable) -> Unit
-    ) {
-        if (taskExecutor.isRunning()) {
-            //正在安装中，阻止这次安装请求
-            isRunning()
-            return
-        }
-
-        taskExecutor.executePhasesAsync(
-            onStart = {
-                val tasks = getUpdateLoaderTaskPhase()
-                taskExecutor.addPhases(tasks)
-            },
-            onComplete = {
-                if (info.overwrite) {
-                    clearBackupFiles()
-                }
-                onInstalled()
-            },
-            onError = {
-                if (info.overwrite) {
-                    revertClientDir()
-                }
                 onError(it)
             }
         )
@@ -219,38 +173,16 @@ class GameInstaller(
     /**
      * 构建安装过程中使用的所有路径配置
      */
-    private fun createPathConfig(checkTargetVersion: Boolean): InstallationPathConfig {
+    private fun createPathConfig(): InstallationPathConfig {
         //目标版本目录
         val targetClientDir1 = File(getVersionsHome(targetGameFolder.absolutePath), info.customVersionName)
         targetClientDir = targetClientDir1
         val targetVersionJson = File(targetClientDir1, "${info.customVersionName}.json")
-        val targetVersionJar = File(targetClientDir1, "${info.customVersionName}.jar")
 
-        //目标版本已经安装的情况，非覆盖模式将退出
-        if (!info.overwrite && checkTargetVersion && targetVersionJson.exists()) {
+        //目标版本已经安装的情况，退出
+        if (targetVersionJson.exists()) {
             Logger.debug(TAG, "The game has already been installed!")
             throw GameAlreadyInstalledException()
-        }
-
-        //如果是覆盖安装，将清除目标版本Json和Jar
-        if (info.overwrite) {
-            runCatching {
-                targetVersionJson.takeIf { it.exists() }?.let {
-                    overrideClientJson.delete()
-                    it.copyTo(overrideClientJson)
-                    it.delete()
-                }
-                targetVersionJar.takeIf { it.exists() }?.let {
-                    overrideClientJar.delete()
-                    it.copyTo(overrideClientJar)
-                    it.delete()
-                }
-            }.onFailure {
-                //无法正常备份，只能硬着头皮干！
-                FileUtils.deleteQuietly(overrideClientJson)
-                FileUtils.deleteQuietly(overrideClientJar)
-                Logger.warning(TAG, "Backup failed, will proceed with overwrite installation directly!", it)
-            }
         }
 
         val tempGameDir = PathManager.DIR_CACHE_GAME_DOWNLOADER
@@ -295,7 +227,7 @@ class GameInstaller(
         createIsolation: Boolean = true,
         onInstalled: suspend (targetClientDir: File) -> Unit = {},
     ): List<TaskFlowExecutor.TaskPhase> = withContext(Dispatchers.IO) {
-        val pathConfig = createPathConfig(checkTargetVersion = true)
+        val pathConfig = createPathConfig()
 
         listOf(
             buildPhase {
@@ -381,133 +313,6 @@ class GameInstaller(
                             }
                         )
                     }
-                )
-            }
-        )
-    }
-
-    /**
-     * 获取安装加载器更新的任务流阶段
-     */
-    private suspend fun getUpdateLoaderTaskPhase(
-        onInstalled: suspend () -> Unit = {},
-    ): List<TaskFlowExecutor.TaskPhase> = withContext(Dispatchers.IO) {
-        val pathConfig = createPathConfig(checkTargetVersion = false)
-
-        listOf(
-            buildPhase {
-                //开始之前，应该先清理一次临时游戏目录，否则可能会影响安装结果
-                addTask(
-                    id = "UpdateLoader.ClearTemp",
-                    title = androidText(R.string.download_install_clear_temp),
-                    icon = R.drawable.ic_auto_delete_outlined,
-                ) {
-                    clearTempGameDir()
-                    //清理完成缓存目录后，创建新的缓存目录
-                    pathConfig.tempClientDir.createDirAndLog()
-                    pathConfig.optifineDir?.createDirAndLog()
-                    pathConfig.forgeDir?.createDirAndLog()
-                    pathConfig.neoforgeDir?.createDirAndLog()
-                    pathConfig.fabricDir?.createDirAndLog()
-                    pathConfig.legacyFabricDir?.createDirAndLog()
-                    pathConfig.quiltDir?.createDirAndLog()
-                    pathConfig.cleanroomDir?.createDirAndLog()
-                    pathConfig.tempModsDir.createDirAndLog()
-                }
-
-                //下载原版的 Json/Jar，后续需要基于这个进行合并
-                addTask(
-                    id = "UpdateLoader.DownloadVanilla",
-                    title = androidText(R.string.download_game_install_base_download_file2, info.gameVersion)
-                ) { task ->
-                    val clientVersion = info.gameVersion
-                    val mcFolder = pathConfig.tempGameVersionsDir
-
-                    //下载原版 Json
-                    task.updateProgress(-1f)
-                    val manifest = downloader.findVersion(clientVersion)?.let {
-                        downloader.createVersionJson(it, clientVersion, mcFolder)
-                    } ?: error("Version not found: $clientVersion")
-
-                    //下载原版 Jar
-                    val tempJarFile = downloader.getVersionJarPath(clientVersion, mcFolder)
-                    manifest.downloads?.client?.let { client ->
-                        val urls = client.url.mapBMCLMirrorUrls()
-                        val sizeConfig = object {
-                            val totalSize = client.size
-                            var downloadedSize: Long = 0L
-                        }
-                        //开始下载
-                        withSpeedReport(
-                            onSpeedReport = { bytes ->
-                                task.updateSpeed(bytes)
-                            },
-                            onClear = {
-                                task.clearSpeed()
-                            }
-                        ) { report ->
-                            downloadFileFromSources(
-                                urls = urls,
-                                outputFile = tempJarFile,
-                                sizeCallback = { downloaded ->
-                                    sizeConfig.downloadedSize += downloaded
-                                    task.updateProgress(
-                                        (sizeConfig.downloadedSize.toFloat() / sizeConfig.totalSize.toFloat())
-                                            .coerceIn(0f, 1f)
-                                    )
-                                    report(downloaded)
-                                }
-                            )
-                        }
-                    } ?: run {
-                        //如果未提供下载方式，则很可能是需要复制原版的Jar文件
-                        val clientFile = downloader.getVersionJarPath(clientVersion, downloader.versionsTarget)
-                        if (clientFile.exists()) {
-                            clientFile.copyTo(tempJarFile)
-                        } else {
-                            error("Unable to cache the vanilla Jar file: $clientVersion")
-                        }
-                    }
-
-                    task.updateProgress(1f)
-                }
-
-                //下载加载器/模组
-                addLoaderTasks(
-                    tempGameDir = pathConfig.tempGameDir,
-                    tempMinecraftDir = pathConfig.tempMinecraftDir,
-                    forgeDir = pathConfig.forgeDir,
-                    neoforgeDir = pathConfig.neoforgeDir,
-                    fabricDir = pathConfig.fabricDir,
-                    legacyFabricDir = pathConfig.legacyFabricDir,
-                    quiltDir = pathConfig.quiltDir,
-                    cleanroomDir = pathConfig.cleanroomDir,
-                    tempModsDir = pathConfig.tempModsDir
-                )
-
-                //最终游戏安装任务
-                addTask(
-                    title = androidText(R.string.download_game_install_game_files_progress),
-                    icon = R.drawable.ic_build_outlined,
-                    task = createGameInstalledTask(
-                        tempMinecraftDir = pathConfig.tempMinecraftDir,
-                        targetMinecraftDir = targetGameFolder,
-                        targetClientDir = pathConfig.targetClientDir,
-                        tempClientDir = pathConfig.tempClientDir,
-                        tempModsDir = pathConfig.tempModsDir,
-                        createIsolation = false, //这个安装流程针对的是已有的版本，所以不应该重新创建
-                        optiFineFolder = pathConfig.optifineDir,
-                        forgeFolder = pathConfig.forgeDir,
-                        neoForgeFolder = pathConfig.neoforgeDir,
-                        fabricFolder = pathConfig.fabricDir,
-                        legacyFabricFolder = pathConfig.legacyFabricDir,
-                        quiltFolder = pathConfig.quiltDir,
-                        cleanroomFolder = pathConfig.cleanroomDir,
-                        onComplete = {
-                            onInstalled()
-                            targetClientDir = null
-                        }
-                    )
                 )
             }
         )
@@ -687,12 +492,8 @@ class GameInstaller(
     ) {
         taskExecutor.cancel()
 
-        if (clearTarget && !info.overwrite) {
+        if (clearTarget) {
             clearTargetClient()
-        }
-
-        if (info.overwrite) {
-            revertClientDir()
         }
 
         CoroutineScope(Dispatchers.Main).launch {
@@ -726,35 +527,6 @@ class GameInstaller(
                 //直接清除上一次安装的目标目录
                 FileUtils.deleteQuietly(it)
                 Logger.info(TAG, "Successfully deleted version directory: ${it.name} at path: ${it.absolutePath}")
-            }
-        }
-    }
-
-    private fun clearBackupFiles() {
-        CoroutineScope(Dispatchers.IO).launch {
-            FileUtils.deleteQuietly(overrideClientJson)
-            FileUtils.deleteQuietly(overrideClientJar)
-        }
-    }
-
-    private fun revertClientDir() {
-        val targetDir = targetClientDir ?: return
-
-        val targetJson = File(targetDir, "${info.customVersionName}.json")
-        val targetJar = File(targetDir, "${info.customVersionName}.jar")
-
-        CoroutineScope(Dispatchers.IO).launch {
-            runCatching {
-                if (overrideClientJson.exists()) {
-                    FileUtils.deleteQuietly(targetJson)
-                    FileUtils.moveFile(overrideClientJson, targetJson)
-                }
-                if (overrideClientJar.exists()) {
-                    FileUtils.deleteQuietly(targetJar)
-                    FileUtils.moveFile(overrideClientJar, targetJar)
-                }
-            }.onFailure { e ->
-                Logger.error(TAG, "Failed to revert client files: ${e.message}", e)
             }
         }
     }
@@ -1029,7 +801,6 @@ class GameInstaller(
                     val targetMod = File(targetModsDir, modFile.name)
                     if (!targetMod.exists()) {
                         //如果已经安装了，那就不覆盖
-                        //用户可能是覆盖安装，所以检查这个很有必要
                         modFile.copyTo(targetMod)
                     }
                 }
