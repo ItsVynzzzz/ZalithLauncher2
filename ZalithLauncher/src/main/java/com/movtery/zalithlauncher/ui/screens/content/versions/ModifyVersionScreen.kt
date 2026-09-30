@@ -636,7 +636,7 @@ private fun MCVersionRow(
                 )
                 if (selected == current) {
                     Text(
-                        text = stringResource(R.string.versions_modify_mc_unchanged),
+                        text = current,
                         style = MaterialTheme.typography.bodySmall
                     )
                 } else {

@@ -652,7 +652,6 @@
     <string name="versions_modify_start">开始修改</string>
     <string name="versions_modify_select_mc">选择 Minecraft 版本</string>
     <string name="versions_modify_name_tip">此处可修改该版本的名称</string>
-    <string name="versions_modify_mc_unchanged">未变更</string>
     <string name="versions_modify_mc_changed_title">Minecraft 版本已变更</string>
     <string name="versions_modify_mc_changed_tip">部分加载器可能并不支持该版本，可为新版本重新选择加载器。</string>
     <string name="versions_modify_confirm_message">将为该版本应用以下变更：</string>

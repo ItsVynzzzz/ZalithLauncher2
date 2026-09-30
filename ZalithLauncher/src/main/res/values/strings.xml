@@ -653,7 +653,6 @@
     <string name="versions_modify_start">Start Modify</string>
     <string name="versions_modify_select_mc">Select Minecraft Version</string>
     <string name="versions_modify_name_tip">You can rename this version here</string>
-    <string name="versions_modify_mc_unchanged">Unchanged</string>
     <string name="versions_modify_mc_changed_title">The Minecraft version has changed</string>
     <string name="versions_modify_mc_changed_tip">Some mod loaders may not support this version; you can reselect the loaders for the new version.</string>
     <string name="versions_modify_confirm_message">The following changes will be applied to the version:</string>
