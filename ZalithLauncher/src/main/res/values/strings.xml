@@ -655,7 +655,7 @@
     <string name="versions_modify_name_tip">You can rename this version here</string>
     <string name="versions_modify_mc_changed_title">The Minecraft version has changed</string>
     <string name="versions_modify_mc_changed_tip">Some mod loaders may not support this version; you can reselect the loaders for the new version.</string>
-    <string name="versions_modify_unrecognized_title">Installed components below cannot be matched to the version list and will be kept as-is unless a new version is selected</string>
+    <string name="versions_modify_unrecognized_title">Installed components below cannot be matched automatically (possibly incompatible with the selected loaders) and will be kept as-is unless a new version is selected</string>
     <string name="versions_modify_confirm_message">The following changes will be applied to the version:</string>
     <string name="versions_modify_diff_remove">Remove %s</string>
     <string name="versions_modify_diff_install">Install %1$s %2$s</string>

@@ -654,7 +654,7 @@
     <string name="versions_modify_name_tip">此处可修改该版本的名称</string>
     <string name="versions_modify_mc_changed_title">Minecraft 版本已变更</string>
     <string name="versions_modify_mc_changed_tip">部分加载器可能并不支持该版本，可为新版本重新选择加载器。</string>
-    <string name="versions_modify_unrecognized_title">以下已安装的组件无法与版本列表匹配，未选择新版本时将保留原样</string>
+    <string name="versions_modify_unrecognized_title">以下已安装的组件无法自动匹配（可能与所选加载器不兼容），未选择新版本时将保留原样</string>
     <string name="versions_modify_confirm_message">将为该版本应用以下变更：</string>
     <string name="versions_modify_diff_remove">移除 %s</string>
     <string name="versions_modify_diff_install">安装 %1$s %2$s</string>

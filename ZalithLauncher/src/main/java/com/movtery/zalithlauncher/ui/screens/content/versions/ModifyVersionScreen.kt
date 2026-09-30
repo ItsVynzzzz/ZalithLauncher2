@@ -93,6 +93,7 @@ import com.movtery.zalithlauncher.ui.screens.content.download.game.OptiFineList
 import com.movtery.zalithlauncher.ui.screens.content.download.game.QuiltList
 import com.movtery.zalithlauncher.ui.screens.content.download.game.SelectGameVersionHost
 import com.movtery.zalithlauncher.ui.screens.content.download.game.SelectGameVersionScreen
+import com.movtery.zalithlauncher.ui.screens.content.download.game.isOptiFineCompatibleWithForge
 import com.movtery.zalithlauncher.ui.screens.content.download.game.rememberLoaderVerSupports
 import com.movtery.zalithlauncher.ui.screens.content.download.game.runWithState
 import com.movtery.zalithlauncher.ui.screens.content.elements.backgroundGlass
@@ -239,7 +240,12 @@ private fun ModifyVersionContent(
             }
 
             //未识别的已安装组件提示
-            val unrecognizedInstalled = installedLoaders.filter { it.loader in addonsVM.unmatchedLoaders }
+            val unrecognizedInstalled = if (targetGameVersion == originalGameVersion) {
+                // 切换 Minecraft 版本后视为移除，不再提示
+                installedLoaders.filter { it.loader in addonsVM.unmatchedLoaders }
+            } else {
+                emptyList()
+            }
             if (unrecognizedInstalled.isNotEmpty()) {
                 animatedItem(scope) { yOffset ->
                     ModifyTipItem(
@@ -397,6 +403,23 @@ private class ModifyAddonsViewModel(
     var unmatchedLoaders by mutableStateOf<Set<ModLoader>>(emptySet())
         private set
 
+    /** 已加载版本列表、等待预选的加载器（列表加载失败也计入） */
+    private val pendingPreselects = linkedMapOf<ModLoader, () -> Unit>()
+
+    /** 已完成预选尝试的加载器 */
+    private val attemptedPreselects = mutableSetOf<ModLoader>()
+
+    /** 会加载版本列表的加载器；其余已安装加载器（如 LiteLoader）无法参与预选 */
+    private val reloadableLoaders = buildSet {
+        add(ModLoader.OPTIFINE)
+        add(ModLoader.FORGE)
+        if (loaderSupports.isNeoForgeSupports) add(ModLoader.NEOFORGE)
+        if (loaderSupports.isFabricSupports) add(ModLoader.FABRIC)
+        if (loaderSupports.isLegacyFabricSupports) add(ModLoader.LEGACY_FABRIC)
+        if (loaderSupports.isQuiltSupports) add(ModLoader.QUILT)
+        if (loaderSupports.isCleanroomSupports) add(ModLoader.CLEANROOM)
+    }
+
     private fun findInstalled(loader: ModLoader): VersionInfo.LoaderInfo? {
         return installedLoaders.firstOrNull { it.loader == loader }
     }
@@ -422,10 +445,13 @@ private class ModifyAddonsViewModel(
             }
 
             //已安装加载器的变更情况
+            //切换了 Minecraft 版本后旧加载器几乎必然无法匹配，未选择即视为移除，不再保留原样
+            val keepUnmatched = gameVersion == originalGameVersion
             installedLoaders.forEach { installed ->
                 val selected = selectedVersionOf(installed.loader)
+                if (installed.loader !in attemptedPreselects) return@forEach
                 //未识别的加载器默认保留原样，仅在用户主动选择非等价的新版本时生成变更
-                if (installed.loader in unmatchedLoaders) {
+                if (keepUnmatched && installed.loader in unmatchedLoaders) {
                     if (selected != null && !selectedEqualsInstalled(installed, selected)) {
                         add(
                             ModifyDiffs.LoaderChange(
@@ -497,8 +523,42 @@ private class ModifyAddonsViewModel(
     }
 
     /**
+     * 登记已加载版本列表的加载器，等待按优先级执行预选
+     */
+    private fun enqueuePreselect(loader: ModLoader, action: () -> Unit) {
+        pendingPreselects[loader] = action
+        attemptedPreselects.remove(loader) //重新加载后允许再次尝试
+        runPendingPreselects()
+    }
+
+    /**
+     * 按主加载器优先级依次执行预选,主加载器先完成预选，其余加载器为它让位
+     * 更高优先级的加载器列表尚未加载完成时，低优先级的等待，保证预选结果确定
+     */
+    private fun runPendingPreselects() {
+        installedLoaders
+            .sortedBy {
+                VersionInfo.PRIMARY_PRIORITY.indexOf(it.loader).takeIf { index -> index >= 0 } ?: Int.MAX_VALUE
+            }
+            .forEach { installed ->
+                val loader = installed.loader
+                if (loader in attemptedPreselects) return@forEach
+                val action = pendingPreselects[loader]
+                if (action == null) {
+                    if (loader in reloadableLoaders) return //更高优先级的列表仍在加载，等待
+                    //无法加载版本列表的加载器，直接视为未识别
+                    attemptedPreselects.add(loader)
+                    unmatchedLoaders = unmatchedLoaders + loader
+                    return@forEach
+                }
+                attemptedPreselects.add(loader)
+                action()
+            }
+    }
+
+    /**
      * 预选已安装的加载器版本
-     * 仅在当前行未选择版本、且与已选择的其他加载器全部兼容时才填入；
+     * 仅在当前行未选择版本、通过校验且与已选择的其他加载器全部兼容时才填入；
      * 无法匹配时将加载器标记为未识别，修改时默认保留原样
      */
     private fun <T : AddonVersion> preselectInstalled(
@@ -506,17 +566,23 @@ private class ModifyAddonsViewModel(
         loader: ModLoader,
         versions: List<T>?,
         installedVersion: String,
-        matcher: (T, String) -> Boolean = { version, installed -> version.isVersion(installed) }
+        matcher: (T, String) -> Boolean = { version, installed -> version.isVersion(installed) },
+        validator: (T) -> Boolean = { true }
     ) {
         if (state.value != null) return
 
         val candidate = versions?.find { matcher(it, installedVersion) }
-        if (candidate == null || !currentAddon.isCompatibleWithSelection(candidate, loader, addonList)) {
+        if (
+            candidate == null ||
+            !validator(candidate) ||
+            !currentAddon.isCompatibleWithSelection(candidate, loader, addonList)
+        ) {
             unmatchedLoaders = unmatchedLoaders + loader
             return
         }
 
         state.value = candidate
+        unmatchedLoaders = unmatchedLoaders - loader
     }
 
     fun reloadOptiFine() {
@@ -525,14 +591,22 @@ private class ModifyAddonsViewModel(
             { OptiFineVersions.fetchOptiFineList(gameVersion = gameVersion) }
         ) { versions ->
             addonList.optifineList = versions
-            findInstalled(ModLoader.OPTIFINE)?.let { installed ->
-                preselectInstalled(
-                    state = currentAddon.optifineVersion,
-                    loader = ModLoader.OPTIFINE,
-                    versions = versions,
-                    installedVersion = installed.version,
-                    matcher = { version, installed -> version.matchesInstalledVersion(installed) }
-                )
+            enqueuePreselect(ModLoader.OPTIFINE) {
+                findInstalled(ModLoader.OPTIFINE)?.let { installed ->
+                    preselectInstalled(
+                        state = currentAddon.optifineVersion,
+                        loader = ModLoader.OPTIFINE,
+                        versions = versions,
+                        installedVersion = installed.version,
+                        matcher = { version, installed -> version.matchesInstalledVersion(installed) },
+                        //与已选 Forge 成对校验兼容性
+                        validator = { version ->
+                            currentAddon.forgeVersion.value?.let { forge ->
+                                isOptiFineCompatibleWithForge(version, forge)
+                            } ?: true
+                        }
+                    )
+                }
             }
         }
     }
@@ -543,8 +617,21 @@ private class ModifyAddonsViewModel(
             { ForgeVersions.fetchForgeList(gameVersion) }
         ) { versions ->
             addonList.forgeList = versions
-            findInstalled(ModLoader.FORGE)?.let { installed ->
-                preselectInstalled(currentAddon.forgeVersion, ModLoader.FORGE, versions, installed.version)
+            enqueuePreselect(ModLoader.FORGE) {
+                findInstalled(ModLoader.FORGE)?.let { installed ->
+                    preselectInstalled(
+                        state = currentAddon.forgeVersion,
+                        loader = ModLoader.FORGE,
+                        versions = versions,
+                        installedVersion = installed.version,
+                        //与已选 OptiFine 成对校验兼容性
+                        validator = { version ->
+                            currentAddon.optifineVersion.value?.let { optifine ->
+                                isOptiFineCompatibleWithForge(optifine, version)
+                            } ?: true
+                        }
+                    )
+                }
             }
         }
     }
@@ -555,8 +642,10 @@ private class ModifyAddonsViewModel(
             { NeoForgeVersions.fetchNeoForgeList(gameVersion = gameVersion) }
         ) { versions ->
             addonList.neoforgeList = versions
-            findInstalled(ModLoader.NEOFORGE)?.let { installed ->
-                preselectInstalled(currentAddon.neoforgeVersion, ModLoader.NEOFORGE, versions, installed.version)
+            enqueuePreselect(ModLoader.NEOFORGE) {
+                findInstalled(ModLoader.NEOFORGE)?.let { installed ->
+                    preselectInstalled(currentAddon.neoforgeVersion, ModLoader.NEOFORGE, versions, installed.version)
+                }
             }
         }
     }
@@ -567,8 +656,10 @@ private class ModifyAddonsViewModel(
             { FabricVersions.fetchFabricLoaderList(gameVersion) }
         ) { versions ->
             addonList.fabricList = versions
-            findInstalled(ModLoader.FABRIC)?.let { installed ->
-                preselectInstalled(currentAddon.fabricVersion, ModLoader.FABRIC, versions, installed.version)
+            enqueuePreselect(ModLoader.FABRIC) {
+                findInstalled(ModLoader.FABRIC)?.let { installed ->
+                    preselectInstalled(currentAddon.fabricVersion, ModLoader.FABRIC, versions, installed.version)
+                }
             }
         }
     }
@@ -579,8 +670,10 @@ private class ModifyAddonsViewModel(
             { LegacyFabricVersions.fetchFabricLoaderList(gameVersion) }
         ) { versions ->
             addonList.legacyFabricList = versions
-            findInstalled(ModLoader.LEGACY_FABRIC)?.let { installed ->
-                preselectInstalled(currentAddon.legacyFabricVersion, ModLoader.LEGACY_FABRIC, versions, installed.version)
+            enqueuePreselect(ModLoader.LEGACY_FABRIC) {
+                findInstalled(ModLoader.LEGACY_FABRIC)?.let { installed ->
+                    preselectInstalled(currentAddon.legacyFabricVersion, ModLoader.LEGACY_FABRIC, versions, installed.version)
+                }
             }
         }
     }
@@ -591,8 +684,10 @@ private class ModifyAddonsViewModel(
             { QuiltVersions.fetchQuiltLoaderList(gameVersion) }
         ) { versions ->
             addonList.quiltList = versions
-            findInstalled(ModLoader.QUILT)?.let { installed ->
-                preselectInstalled(currentAddon.quiltVersion, ModLoader.QUILT, versions, installed.version)
+            enqueuePreselect(ModLoader.QUILT) {
+                findInstalled(ModLoader.QUILT)?.let { installed ->
+                    preselectInstalled(currentAddon.quiltVersion, ModLoader.QUILT, versions, installed.version)
+                }
             }
         }
     }
@@ -603,13 +698,22 @@ private class ModifyAddonsViewModel(
             { CleanroomVersions.fetchLoaderList(gameVersion) }
         ) { versions ->
             addonList.cleanroomList = versions
-            findInstalled(ModLoader.CLEANROOM)?.let { installed ->
-                preselectInstalled(currentAddon.cleanroomVersion, ModLoader.CLEANROOM, versions, installed.version)
+            enqueuePreselect(ModLoader.CLEANROOM) {
+                findInstalled(ModLoader.CLEANROOM)?.let { installed ->
+                    preselectInstalled(currentAddon.cleanroomVersion, ModLoader.CLEANROOM, versions, installed.version)
+                }
             }
         }
     }
 
     init {
+        //不会被加载版本列表的已安装加载器，直接标记为未识别，避免阻塞其他加载器的预选
+        installedLoaders.forEach { installed ->
+            if (installed.loader !in reloadableLoaders) {
+                attemptedPreselects.add(installed.loader)
+                unmatchedLoaders = unmatchedLoaders + installed.loader
+            }
+        }
         reloadOptiFine()
         reloadForge()
         if (loaderSupports.isNeoForgeSupports) {
