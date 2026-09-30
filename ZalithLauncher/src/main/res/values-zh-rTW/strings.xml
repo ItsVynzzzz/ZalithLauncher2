@@ -593,6 +593,17 @@
     <string name="versions_manage_category_modloader">可安裝模組</string>
     <string name="versions_manage_pin">置頂</string>
     <string name="versions_manage_install_exists">此名稱的版本已存在！</string>
+    <string name="versions_modify_version">修改版本</string>
+    <string name="versions_modify_start">開始修改</string>
+    <string name="versions_modify_select_mc">選擇 Minecraft 版本</string>
+    <string name="versions_modify_name_tip">此處可修改該版本的名稱</string>
+    <string name="versions_modify_mc_changed_title">Minecraft 版本已變更</string>
+    <string name="versions_modify_mc_changed_tip">部分載入器可能並不支援該版本，可為新版本重新選擇載入器。</string>
+    <string name="versions_modify_confirm_message">將為該版本套用以下變更：</string>
+    <string name="versions_modify_diff_remove">移除 %s</string>
+    <string name="versions_modify_diff_install">安裝 %1$s %2$s</string>
+    <string name="versions_modify_success">版本修改成功！</string>
+    <string name="versions_modify_error_message">修改版本時發生錯誤：</string>
     <string name="versions_manage_invalid">此版本無效</string>
     <string name="home_add_version_card">新增卡片至主畫面</string>
     <string name="home_version_card_deleted">版本已刪除</string>
