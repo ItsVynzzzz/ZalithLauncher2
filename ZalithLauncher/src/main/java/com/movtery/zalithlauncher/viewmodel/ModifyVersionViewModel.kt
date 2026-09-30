@@ -80,6 +80,7 @@ import io.ktor.client.plugins.HttpRequestTimeoutException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.SerializationException
+import java.io.File
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -107,17 +108,20 @@ sealed interface ModifyOperation {
  * 版本修改载荷
  * @param info 修改后的游戏安装信息
  * @param currentGameVersion 版本当前的 Minecraft 版本
- * @param currentVersionName 要修改的版本名称
+ * @param currentVersion 版本对应的 [Version] 对象
  * @param newVersionName 修改完成后的新版本名称，与当前名称一致时不重命名
  * @param diffs 变更内容
  */
 data class ModifyPayload(
     val info: GameDownloadInfo,
     val currentGameVersion: String,
-    val currentVersionName: String,
-    val newVersionName: String = currentVersionName,
+    val currentVersion: Version,
+    val newVersionName: String = currentVersion.getVersionName(),
     val diffs: ModifyDiffs
-)
+) {
+    val currentVersionName: String
+        get() = currentVersion.getVersionName()
+}
 
 /**
  * 版本的变更内容
@@ -165,20 +169,40 @@ class ModifyVersionViewModel : ViewModel() {
 
     fun modify(context: Context, payload: ModifyPayload) {
         installOperation = ModifyOperation.Install
-        installer = GameInstaller(context, payload.info, viewModelScope).also {
+        installer = GameInstaller(
+            context = context,
+            info = payload.info,
+            scope = viewModelScope,
+            targetGameFolder = File(payload.currentVersion.getGameHome())
+        ).also {
             it.modifyVersion(
                 currentGameVersion = payload.currentGameVersion,
                 onModified = {
                     installer = null
                     viewModelScope.launch(Dispatchers.Main) {
-                        VersionsManager.refresh("[ModifyVersion] GameInstaller.onModified")
-                        if (payload.newVersionName != payload.currentVersionName) {
-                            VersionsManager.versions.value.firstOrNull { version ->
-                                version.getVersionName() == payload.currentVersionName
-                            }?.let { version ->
-                                renameVersion(version, payload)
-                            }
+                        val version = payload.currentVersion
+                        val gameHome = version.getGameHome()
+                        val isNameChanged = payload.newVersionName != payload.currentVersionName
+                        if (isNameChanged) {
+                            VersionsManager.renameVersion(version, payload.newVersionName, false)
                         }
+
+                        if (isNameChanged) {
+                            lateinit var refreshListener: suspend () -> Unit
+                            refreshListener = {
+                                // 同步主界面版本卡片的记录，避免卡片因改名失效
+                                VersionCardManager.onVersionRenamed(
+                                    gameHome = gameHome,
+                                    oldName = payload.currentVersionName,
+                                    newName = payload.newVersionName
+                                )
+                                VersionsManager.unregisterListener(refreshListener)
+                            }
+                            VersionsManager.registerListener(refreshListener)
+                        }
+
+                        VersionsManager.refresh("[ModifyVersion] GameInstaller.onModified")
+
                         installOperation = ModifyOperation.Success
                     }
                 },
@@ -188,19 +212,6 @@ class ModifyVersionViewModel : ViewModel() {
                 }
             )
         }
-    }
-
-    /**
-     * 修改完成后重命名版本
-     */
-    private fun renameVersion(version: Version, payload: ModifyPayload) {
-        VersionsManager.renameVersion(version, payload.newVersionName)
-        // 同步主界面版本卡片的记录，避免卡片因改名失效
-        VersionCardManager.onVersionRenamed(
-            gameHome = version.getGameHome(),
-            oldName = payload.currentVersionName,
-            newName = payload.newVersionName
-        )
     }
 
     fun cancel() {

@@ -346,7 +346,7 @@ private fun ModifyVersionContent(
                                             .takeIf { loaderSupports.isCleanroomSupports }
                                     ),
                                     currentGameVersion = originalGameVersion,
-                                    currentVersionName = version.getVersionName(),
+                                    currentVersion = version,
                                     diffs = diffs
                                 )
                             )
