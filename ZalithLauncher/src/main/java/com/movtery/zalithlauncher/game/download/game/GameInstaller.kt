@@ -540,8 +540,7 @@ class GameInstaller(
                         tempMinecraftDir = tempMinecraftDir,
                         tempInstallerJar = targetInstaller,
                         isNewVersion = isNewVersion,
-                        optifineVersion = optifineVersion,
-                        logOutputHolder = logOutputHolder
+                        optifineVersion = optifineVersion
                     )
                 )
             } else {

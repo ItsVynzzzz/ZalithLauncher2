@@ -22,8 +22,6 @@ import com.movtery.zalithlauncher.R
 import com.movtery.zalithlauncher.components.jre.Jre
 import com.movtery.zalithlauncher.context.GlobalContext
 import com.movtery.zalithlauncher.coroutine.Task
-import com.movtery.zalithlauncher.coroutine.TaskLogOutput
-import com.movtery.zalithlauncher.coroutine.withTaskLogOutput
 import com.movtery.zalithlauncher.game.addons.modloader.ModLoader
 import com.movtery.zalithlauncher.game.addons.modloader.optifine.OptiFineVersion
 import com.movtery.zalithlauncher.game.download.game.isOldVersion
@@ -36,7 +34,6 @@ import com.movtery.zalithlauncher.ui.androidText
 import com.movtery.zalithlauncher.utils.file.extractEntryToFile
 import com.movtery.zalithlauncher.utils.file.readText
 import com.movtery.zalithlauncher.utils.logging.Logger
-import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.File
 import java.time.format.DateTimeFormatter
 import java.util.zip.ZipFile
@@ -50,8 +47,7 @@ fun getOptiFineInstallTask(
     tempMinecraftDir: File,
     tempInstallerJar: File,
     isNewVersion: Boolean,
-    optifineVersion: OptiFineVersion,
-    logOutputHolder: MutableStateFlow<TaskLogOutput?>
+    optifineVersion: OptiFineVersion
 ): Task {
     val tempVersionFolder = File(tempMinecraftDir, "versions")
     val tempLibrariesFolder = File(tempMinecraftDir, "libraries")
@@ -66,37 +62,28 @@ fun getOptiFineInstallTask(
 
             if (isNewVersion) {
                 stopAllNonMainProcesses(GlobalContext)
-                withTaskLogOutput(
-                    holder = logOutputHolder,
-                    title = androidText(
-                        R.string.download_game_install_base_install,
-                        ModLoader.OPTIFINE.displayName
-                    )
-                ) { output ->
-                    runJvmRetryRuntimes(
-                        OPTIFINE_INSTALL_ID,
-                        jvmArgs =
-                            "-javaagent:" +
-                                    //使用 AWTBlockerAgent 禁用 AWT GUI 类调用
-                                    LibPath.AWT_BLOCKER_AGENT.absolutePath + " " +
-                                    "-cp" + " " +
-                                    //使用 JarExceptionCatcher 捕获异常并退出
-                                    LibPath.JAR_EXCEPTION_CATCHER.absolutePath + ":" +
-                                    tempInstallerJar.absolutePath + " " +
-                                    "movtery.JarExceptionCatcher" + " " +
-                                    "optifine.Installer",
-                        prefixArgs = { jre ->
-                            if (jre.majorVersion >= 9) {
-                                "--add-exports cpw.mods.bootstraplauncher/cpw.mods.bootstraplauncher=ALL-UNNAMED"
-                            } else {
-                                null
-                            }
-                        },
-                        jre = Jre.JRE_8,
-                        userHome = tempGameDir.absolutePath.trimEnd('\\'),
-                        logOutput = output
-                    )
-                }
+                runJvmRetryRuntimes(
+                    OPTIFINE_INSTALL_ID,
+                    jvmArgs =
+                        "-javaagent:" +
+                                //使用 AWTBlockerAgent 禁用 AWT GUI 类调用
+                                LibPath.AWT_BLOCKER_AGENT.absolutePath + " " +
+                                "-cp" + " " +
+                                //使用 JarExceptionCatcher 捕获异常并退出
+                                LibPath.JAR_EXCEPTION_CATCHER.absolutePath + ":" +
+                                tempInstallerJar.absolutePath + " " +
+                                "movtery.JarExceptionCatcher" + " " +
+                                "optifine.Installer",
+                    prefixArgs = { jre ->
+                        if (jre.majorVersion >= 9) {
+                            "--add-exports cpw.mods.bootstraplauncher/cpw.mods.bootstraplauncher=ALL-UNNAMED"
+                        } else {
+                            null
+                        }
+                    },
+                    jre = Jre.JRE_8,
+                    userHome = tempGameDir.absolutePath.trimEnd('\\')
+                )
 
                 //检查 launchwrapper 是否正常安装
                 ZipFile(tempInstallerJar).use { zip ->
