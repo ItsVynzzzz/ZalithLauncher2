@@ -336,6 +336,7 @@ private fun AccountAvatarRow(
     ) {
         if (account != null) {
             PlayerFace(
+                modifier = Modifier.padding(start = 4.dp),
                 account = account,
                 avatarSize = 48.dp,
                 refreshKey = refreshKey
