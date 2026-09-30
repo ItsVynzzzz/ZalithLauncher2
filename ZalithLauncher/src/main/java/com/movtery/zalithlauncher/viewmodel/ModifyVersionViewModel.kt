@@ -107,14 +107,12 @@ sealed interface ModifyOperation {
 /**
  * 版本修改载荷
  * @param info 修改后的游戏安装信息
- * @param currentGameVersion 版本当前的 Minecraft 版本
  * @param currentVersion 版本对应的 [Version] 对象
  * @param newVersionName 修改完成后的新版本名称，与当前名称一致时不重命名
  * @param diffs 变更内容
  */
 data class ModifyPayload(
     val info: GameDownloadInfo,
-    val currentGameVersion: String,
     val currentVersion: Version,
     val newVersionName: String = currentVersion.getVersionName(),
     val diffs: ModifyDiffs
@@ -176,7 +174,6 @@ class ModifyVersionViewModel : ViewModel() {
             targetGameFolder = File(payload.currentVersion.getGameHome())
         ).also {
             it.modifyVersion(
-                currentGameVersion = payload.currentGameVersion,
                 onModified = {
                     installer = null
                     viewModelScope.launch(Dispatchers.Main) {

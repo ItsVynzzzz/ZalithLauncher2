@@ -213,7 +213,6 @@
     <string name="download_game_install_forgelike_analyse">Analyze libraries for %s</string>
     <string name="download_game_install_forgelike_preparing_mapping_file">Preparing %s mapping file</string>
     <string name="download_game_install_game_files_progress">Install game files</string>
-    <string name="download_game_modify_prepare_files">Prepare vanilla files: %s</string>
     <string name="download_install">Install</string>
     <string name="download_install_error_title">Installation Failed</string>
     <string name="download_install_error_message">An exception occurred during the installation of your game:</string>

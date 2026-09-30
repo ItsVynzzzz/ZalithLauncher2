@@ -40,6 +40,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.nonInteractiveScrollbar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,6 +59,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.movtery.zalithlauncher.R
+import com.movtery.zalithlauncher.game.addons.modloader.AddonVersion
 import com.movtery.zalithlauncher.game.addons.modloader.ModLoader
 import com.movtery.zalithlauncher.game.addons.modloader.cleanroom.CleanroomVersions
 import com.movtery.zalithlauncher.game.addons.modloader.fabriclike.fabric.FabricVersions
@@ -345,7 +347,6 @@ private fun ModifyVersionContent(
                                         cleanroom = addonsVM.currentAddon.cleanroomVersion.value
                                             .takeIf { loaderSupports.isCleanroomSupports }
                                     ),
-                                    currentGameVersion = originalGameVersion,
                                     currentVersion = version,
                                     diffs = diffs
                                 )
@@ -451,15 +452,32 @@ private class ModifyAddonsViewModel(
         }
     }
 
+    /**
+     * 预选已安装的加载器版本
+     * 仅在当前行未选择版本、且与已选择的其他加载器全部兼容时才填入
+     */
+    private fun <T : AddonVersion> preselectInstalled(
+        state: MutableState<T?>,
+        loader: ModLoader,
+        versions: List<T>?,
+        installedVersion: String
+    ) {
+        if (state.value != null) return
+
+        val candidate = versions?.find { it.isVersion(installedVersion) } ?: return
+        if (!currentAddon.isCompatibleWithSelection(candidate, loader, addonList)) return
+
+        state.value = candidate
+    }
+
     fun reloadOptiFine() {
         launchAddonReload(
             { currentAddon.optifineState = it },
             { OptiFineVersions.fetchOptiFineList(gameVersion = gameVersion) }
         ) { versions ->
             addonList.optifineList = versions
-            val installed = findInstalled(ModLoader.OPTIFINE)
-            if (installed != null && currentAddon.optifineVersion.value == null) {
-                currentAddon.optifineVersion.value = versions?.find { it.isVersion(installed.version) }
+            findInstalled(ModLoader.OPTIFINE)?.let { installed ->
+                preselectInstalled(currentAddon.optifineVersion, ModLoader.OPTIFINE, versions, installed.version)
             }
         }
     }
@@ -470,9 +488,8 @@ private class ModifyAddonsViewModel(
             { ForgeVersions.fetchForgeList(gameVersion) }
         ) { versions ->
             addonList.forgeList = versions
-            val installed = findInstalled(ModLoader.FORGE)
-            if (installed != null && currentAddon.forgeVersion.value == null) {
-                currentAddon.forgeVersion.value = versions?.find { it.isVersion(installed.version) }
+            findInstalled(ModLoader.FORGE)?.let { installed ->
+                preselectInstalled(currentAddon.forgeVersion, ModLoader.FORGE, versions, installed.version)
             }
         }
     }
@@ -483,9 +500,8 @@ private class ModifyAddonsViewModel(
             { NeoForgeVersions.fetchNeoForgeList(gameVersion = gameVersion) }
         ) { versions ->
             addonList.neoforgeList = versions
-            val installed = findInstalled(ModLoader.NEOFORGE)
-            if (installed != null && currentAddon.neoforgeVersion.value == null) {
-                currentAddon.neoforgeVersion.value = versions?.find { it.isVersion(installed.version) }
+            findInstalled(ModLoader.NEOFORGE)?.let { installed ->
+                preselectInstalled(currentAddon.neoforgeVersion, ModLoader.NEOFORGE, versions, installed.version)
             }
         }
     }
@@ -496,9 +512,8 @@ private class ModifyAddonsViewModel(
             { FabricVersions.fetchFabricLoaderList(gameVersion) }
         ) { versions ->
             addonList.fabricList = versions
-            val installed = findInstalled(ModLoader.FABRIC)
-            if (installed != null && currentAddon.fabricVersion.value == null) {
-                currentAddon.fabricVersion.value = versions?.find { it.isVersion(installed.version) }
+            findInstalled(ModLoader.FABRIC)?.let { installed ->
+                preselectInstalled(currentAddon.fabricVersion, ModLoader.FABRIC, versions, installed.version)
             }
         }
     }
@@ -509,9 +524,8 @@ private class ModifyAddonsViewModel(
             { LegacyFabricVersions.fetchFabricLoaderList(gameVersion) }
         ) { versions ->
             addonList.legacyFabricList = versions
-            val installed = findInstalled(ModLoader.LEGACY_FABRIC)
-            if (installed != null && currentAddon.legacyFabricVersion.value == null) {
-                currentAddon.legacyFabricVersion.value = versions?.find { it.isVersion(installed.version) }
+            findInstalled(ModLoader.LEGACY_FABRIC)?.let { installed ->
+                preselectInstalled(currentAddon.legacyFabricVersion, ModLoader.LEGACY_FABRIC, versions, installed.version)
             }
         }
     }
@@ -522,9 +536,8 @@ private class ModifyAddonsViewModel(
             { QuiltVersions.fetchQuiltLoaderList(gameVersion) }
         ) { versions ->
             addonList.quiltList = versions
-            val installed = findInstalled(ModLoader.QUILT)
-            if (installed != null && currentAddon.quiltVersion.value == null) {
-                currentAddon.quiltVersion.value = versions?.find { it.isVersion(installed.version) }
+            findInstalled(ModLoader.QUILT)?.let { installed ->
+                preselectInstalled(currentAddon.quiltVersion, ModLoader.QUILT, versions, installed.version)
             }
         }
     }
@@ -535,9 +548,8 @@ private class ModifyAddonsViewModel(
             { CleanroomVersions.fetchLoaderList(gameVersion) }
         ) { versions ->
             addonList.cleanroomList = versions
-            val installed = findInstalled(ModLoader.CLEANROOM)
-            if (installed != null && currentAddon.cleanroomVersion.value == null) {
-                currentAddon.cleanroomVersion.value = versions?.find { it.isVersion(installed.version) }
+            findInstalled(ModLoader.CLEANROOM)?.let { installed ->
+                preselectInstalled(currentAddon.cleanroomVersion, ModLoader.CLEANROOM, versions, installed.version)
             }
         }
     }

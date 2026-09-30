@@ -212,6 +212,22 @@ class CurrentAddon {
     }
 
     /**
+     * 检查候选加载器版本是否与当前已选择的其他加载器全部兼容
+     * 用于预选等不经过用户点击的填入场景，避免与用户已做出的选择冲突
+     */
+    fun isCompatibleWithSelection(
+        candidateVersion: AddonVersion?,
+        loader: ModLoader,
+        addonList: AddonList
+    ): Boolean {
+        return allLoaders.all { state ->
+            if (state.loader == loader || state.versionState.value == null) return@all true
+
+            !areMutuallyExclusive(candidateVersion, loader, state.loader, addonList)
+        }
+    }
+
+    /**
      * 判断两个加载器之间是否不兼容
      */
     private fun areMutuallyExclusive(
