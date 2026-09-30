@@ -195,6 +195,7 @@
     <string name="download_game_install_base_install">安裝 %s</string>
     <string name="download_game_install_base_installing">正在透過前景服務安裝 %s</string>
     <string name="download_game_install_optifine_fetch_download_url">獲取 OptiFine %s 下載連結</string>
+    <string name="download_install_error_optifine_forge17_incompatible">此 OptiFine（組建 %s）與 Forge 1.17+ 不相容，需要 H1 Pre2（20210924–190833）或更新的版本</string>
     <string name="download_game_install_forgelike_analyse">分析 %s 支援函式庫</string>
     <string name="download_game_install_forgelike_preparing_mapping_file">準備 %s 映射檔案中</string>
     <string name="download_game_install_game_files_progress">安裝遊戲檔案</string>

@@ -28,7 +28,6 @@ import com.movtery.zalithlauncher.coroutine.TaskLogOutput
 import com.movtery.zalithlauncher.coroutine.TitledTask
 import com.movtery.zalithlauncher.coroutine.addTask
 import com.movtery.zalithlauncher.coroutine.buildPhase
-import com.movtery.zalithlauncher.game.addons.mirror.mapBMCLMirrorUrls
 import com.movtery.zalithlauncher.game.addons.modloader.ModLoader
 import com.movtery.zalithlauncher.game.addons.modloader.cleanroom.CleanroomVersion
 import com.movtery.zalithlauncher.game.addons.modloader.fabriclike.FabricLikeVersion
@@ -48,6 +47,7 @@ import com.movtery.zalithlauncher.game.download.game.forge.targetTempForgeLikeIn
 import com.movtery.zalithlauncher.game.download.game.optifine.getOptiFineDownloadTask
 import com.movtery.zalithlauncher.game.download.game.optifine.getOptiFineInstallTask
 import com.movtery.zalithlauncher.game.download.game.optifine.getOptiFineModsDownloadTask
+import com.movtery.zalithlauncher.game.download.game.optifine.isMinecraft17Plus
 import com.movtery.zalithlauncher.game.download.game.optifine.targetTempOptiFineInstaller
 import com.movtery.zalithlauncher.game.download.jvm_server.JVMSocketServer
 import com.movtery.zalithlauncher.game.download.jvm_server.JvmService
@@ -427,11 +427,13 @@ class GameInstaller(
     ) {
         // OptiFine 安装
         info.optifine?.let { optifineVersion ->
-            if (forgeDir == null && fabricDir == null) {
-                val isNewVersion: Boolean = optifineVersion.inherit.contains("w") || optifineVersion.inherit.split(".")[1].toInt() >= 14
-                val targetInstaller: File = targetTempOptiFineInstaller(tempGameDir, tempMinecraftDir, optifineVersion.fileName, isNewVersion)
+            //Fabric 系加载器无法加载 OptiFine，需要搭配 OptiFabric，仅作为 Mod 下载
+            val hasFabricLike = fabricDir != null || legacyFabricDir != null || quiltDir != null
 
-                //将OptiFine作为版本下载，其余情况则作为Mod下载
+            if (!hasFabricLike) {
+                val targetInstaller: File = targetTempOptiFineInstaller(tempGameDir)
+
+                //下载安装器
                 addTask(
                     title = androidText(
                         R.string.download_game_install_base_download_file,
@@ -455,8 +457,9 @@ class GameInstaller(
                         tempGameDir = tempGameDir,
                         tempMinecraftDir = tempMinecraftDir,
                         tempInstallerJar = targetInstaller,
-                        isNewVersion = isNewVersion,
-                        optifineVersion = optifineVersion
+                        optifineVersion = optifineVersion,
+                        hasBootstrapForge = (forgeDir != null || neoforgeDir != null) && isMinecraft17Plus(info.gameVersion),
+                        logOutputHolder = logOutputHolder
                     )
                 )
             } else {

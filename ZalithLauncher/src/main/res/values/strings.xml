@@ -210,6 +210,7 @@
     <string name="download_game_install_base_install">Install %s</string>
     <string name="download_game_install_base_installing">Installing %s in the foreground</string>
     <string name="download_game_install_optifine_fetch_download_url">Fetch download URL for OptiFine %s</string>
+    <string name="download_install_error_optifine_forge17_incompatible">This OptiFine (build %s) is incompatible with Forge 1.17+. OptiFine H1 Pre2 (20210924–190833) or newer is required.</string>
     <string name="download_game_install_forgelike_analyse">Analyze libraries for %s</string>
     <string name="download_game_install_forgelike_preparing_mapping_file">Preparing %s mapping file</string>
     <string name="download_game_install_game_files_progress">Install game files</string>
