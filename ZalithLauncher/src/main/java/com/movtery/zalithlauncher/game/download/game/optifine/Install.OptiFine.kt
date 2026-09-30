@@ -67,17 +67,6 @@ const val TRANSFORMER_DISCOVERY_SERVICE_LIB = "org.jackhuang.hmcl:transformer-di
 private const val FORGE_17_MIN_BUILD = "20210924-190833"
 
 /**
- * 从 OptiFine 文件名解析出 Maven 版本号
- * OptiFine_1.10.2_HD_U_C1.jar -> 1.10.2_HD_U_C1
- */
-fun OptiFineVersion.mavenVersion(): String {
-    return fileName
-        .removePrefix("preview_")
-        .removePrefix("OptiFine_")
-        .removeSuffix(".jar")
-}
-
-/**
  * 判断 Minecraft 版本是否为 1.17 及以上（BootstrapLauncher时代）
  */
 fun isMinecraft17Plus(version: String): Boolean {

@@ -237,6 +237,18 @@ private fun ModifyVersionContent(
                     )
                 }
             }
+
+            //未识别的已安装组件提示
+            val unrecognizedInstalled = installedLoaders.filter { it.loader in addonsVM.unmatchedLoaders }
+            if (unrecognizedInstalled.isNotEmpty()) {
+                animatedItem(scope) { yOffset ->
+                    ModifyTipItem(
+                        modifier = Modifier.offset { IntOffset(x = 0, y = yOffset.roundToPx()) },
+                        title = stringResource(R.string.versions_modify_unrecognized_title),
+                        text = unrecognizedInstalled.joinToString("、") { "${it.loader.displayName} ${it.version}" }
+                    )
+                }
+            }
     
             animatedItem(scope) { yOffset ->
                 OptiFineList(
@@ -381,6 +393,10 @@ private class ModifyAddonsViewModel(
     var currentDiffs by mutableStateOf<ModifyDiffs?>(null)
         private set
 
+    /** 无法与版本列表匹配的已安装加载器，用户未主动选择新版本时保留原样 */
+    var unmatchedLoaders by mutableStateOf<Set<ModLoader>>(emptySet())
+        private set
+
     private fun findInstalled(loader: ModLoader): VersionInfo.LoaderInfo? {
         return installedLoaders.firstOrNull { it.loader == loader }
     }
@@ -408,9 +424,22 @@ private class ModifyAddonsViewModel(
             //已安装加载器的变更情况
             installedLoaders.forEach { installed ->
                 val selected = selectedVersionOf(installed.loader)
+                //未识别的加载器默认保留原样，仅在用户主动选择非等价的新版本时生成变更
+                if (installed.loader in unmatchedLoaders) {
+                    if (selected != null && !selectedEqualsInstalled(installed, selected)) {
+                        add(
+                            ModifyDiffs.LoaderChange(
+                                modloader = installed.loader,
+                                original = installed.version,
+                                updateTo = selected
+                            )
+                        )
+                    }
+                    return@forEach
+                }
                 when {
                     selected == null -> add(ModifyDiffs.LoaderRemove(modloader = installed.loader))
-                    selected != installed.version -> add(
+                    !selectedEqualsInstalled(installed, selected) -> add(
                         ModifyDiffs.LoaderChange(
                             modloader = installed.loader,
                             original = installed.version,
@@ -437,6 +466,21 @@ private class ModifyAddonsViewModel(
     }
 
     /**
+     * 判断选中的版本与已安装版本是否等价
+     * OptiFine 的已安装信息可能来自库坐标或旧版短版本串，需要与版本列表条目做等价匹配
+     */
+    private fun selectedEqualsInstalled(
+        installed: VersionInfo.LoaderInfo,
+        selected: String
+    ): Boolean {
+        if (selected == installed.version) return true
+        if (installed.loader != ModLoader.OPTIFINE) return false
+        return addonList.optifineList?.any {
+            it.getAddonVersion() == selected && it.matchesInstalledVersion(installed.version)
+        } == true
+    }
+
+    /**
      * 独立加载单个加载器的版本列表，加载完成后刷新初始化状态与变更内容
      */
     private fun <T> launchAddonReload(
@@ -454,18 +498,23 @@ private class ModifyAddonsViewModel(
 
     /**
      * 预选已安装的加载器版本
-     * 仅在当前行未选择版本、且与已选择的其他加载器全部兼容时才填入
+     * 仅在当前行未选择版本、且与已选择的其他加载器全部兼容时才填入；
+     * 无法匹配时将加载器标记为未识别，修改时默认保留原样
      */
     private fun <T : AddonVersion> preselectInstalled(
         state: MutableState<T?>,
         loader: ModLoader,
         versions: List<T>?,
-        installedVersion: String
+        installedVersion: String,
+        matcher: (T, String) -> Boolean = { version, installed -> version.isVersion(installed) }
     ) {
         if (state.value != null) return
 
-        val candidate = versions?.find { it.isVersion(installedVersion) } ?: return
-        if (!currentAddon.isCompatibleWithSelection(candidate, loader, addonList)) return
+        val candidate = versions?.find { matcher(it, installedVersion) }
+        if (candidate == null || !currentAddon.isCompatibleWithSelection(candidate, loader, addonList)) {
+            unmatchedLoaders = unmatchedLoaders + loader
+            return
+        }
 
         state.value = candidate
     }
@@ -477,7 +526,13 @@ private class ModifyAddonsViewModel(
         ) { versions ->
             addonList.optifineList = versions
             findInstalled(ModLoader.OPTIFINE)?.let { installed ->
-                preselectInstalled(currentAddon.optifineVersion, ModLoader.OPTIFINE, versions, installed.version)
+                preselectInstalled(
+                    state = currentAddon.optifineVersion,
+                    loader = ModLoader.OPTIFINE,
+                    versions = versions,
+                    installedVersion = installed.version,
+                    matcher = { version, installed -> version.matchesInstalledVersion(installed) }
+                )
             }
         }
     }
@@ -599,7 +654,7 @@ private fun rememberInstalledLoaders(
                 add(VersionInfo.LoaderInfo(loader = loader, version = info.version))
             }
         }
-        versionInfo.loaderInfo?.let { loaderInfo ->
+        versionInfo.loaderInfos.forEach { loaderInfo ->
             if (none { it.loader == loaderInfo.loader }) {
                 add(loaderInfo)
             }

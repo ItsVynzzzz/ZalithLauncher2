@@ -295,7 +295,7 @@ private fun InfoRow(version: Version) {
             text = versionInfo?.minecraftVersion ?: "",
             style = MaterialTheme.typography.labelSmall
         )
-        versionInfo?.loaderInfo?.let { loaderInfo ->
+        versionInfo?.loaderInfos?.forEach { loaderInfo ->
             Text(
                 text = loaderInfo.loader.displayName,
                 style = MaterialTheme.typography.labelSmall
@@ -391,7 +391,7 @@ private fun CardTexts(
                         text = versionInfo?.minecraftVersion ?: "",
                         style = MaterialTheme.typography.labelSmall
                     )
-                    versionInfo?.loaderInfo?.let { loaderInfo ->
+                    versionInfo?.loaderInfos?.forEach { loaderInfo ->
                         Text(
                             text = loaderInfo.loader.displayName,
                             style = MaterialTheme.typography.labelSmall

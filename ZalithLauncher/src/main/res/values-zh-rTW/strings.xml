@@ -600,6 +600,7 @@
     <string name="versions_modify_name_tip">此處可修改該版本的名稱</string>
     <string name="versions_modify_mc_changed_title">Minecraft 版本已變更</string>
     <string name="versions_modify_mc_changed_tip">部分載入器可能並不支援該版本，可為新版本重新選擇載入器。</string>
+    <string name="versions_modify_unrecognized_title">以下已安裝的元件無法與版本列表匹配，未選擇新版本時將保留原樣</string>
     <string name="versions_modify_confirm_message">將為該版本套用以下變更：</string>
     <string name="versions_modify_diff_remove">移除 %s</string>
     <string name="versions_modify_diff_install">安裝 %1$s %2$s</string>
