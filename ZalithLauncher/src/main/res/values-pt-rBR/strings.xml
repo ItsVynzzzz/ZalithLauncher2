@@ -1424,4 +1424,7 @@
     <string name="festivals_halloween">Feliz dia das bruxas!</string>
     <string name="festivals_valentines">Feliz Dia dos Namorados!</string>
     <string name="launch_check_mods">Verificando mods</string>
+    <string name="cape_name_hero">Herói</string>
+    <string name="cape_name_twisted">Torcido</string>
+    <string name="cape_name_aurora">Aurora</string>
 </resources>
