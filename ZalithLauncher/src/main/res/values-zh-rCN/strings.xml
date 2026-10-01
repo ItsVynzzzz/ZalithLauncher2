@@ -420,6 +420,9 @@
     <string name="game_menu_option_input_method">切换输入法</string>
     <string name="game_menu_option_auto_show_ime">自动唤起输入法（SDL）</string>
     <string name="game_menu_option_switch_fps">帧率显示</string>
+    <string name="game_menu_option_fps_display_mode">帧率显示模式</string>
+    <string name="game_menu_option_fps_display_mode_number">数字</string>
+    <string name="game_menu_option_fps_display_mode_chart">图表</string>
     <string name="game_menu_option_switch_memory">内存显示</string>
     <string name="game_menu_option_menu_ball_opacity">菜单悬浮窗不透明度</string>
     <string name="game_menu_option_send_keycode">发送键值</string>

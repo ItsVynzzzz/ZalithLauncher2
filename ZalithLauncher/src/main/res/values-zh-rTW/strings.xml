@@ -377,6 +377,9 @@
     <string name="game_menu_option_input_method">切換輸入法</string>
     <string name="game_menu_option_auto_show_ime">自動喚起輸入法（SDL）</string>
     <string name="game_menu_option_switch_fps">幀率顯示</string>
+    <string name="game_menu_option_fps_display_mode">幀率顯示模式</string>
+    <string name="game_menu_option_fps_display_mode_number">數字</string>
+    <string name="game_menu_option_fps_display_mode_chart">圖表</string>
     <string name="game_menu_option_switch_memory">記憶體顯示</string>
     <string name="game_menu_option_menu_ball_opacity">選單懸浮窗不透明度</string>
     <string name="game_menu_option_send_keycode">發送鍵值</string>
