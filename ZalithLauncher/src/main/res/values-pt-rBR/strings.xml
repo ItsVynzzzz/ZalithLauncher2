@@ -613,14 +613,6 @@
     <string name="versions_config_failed_to_save">Falha ao salvar a configuração da versão</string>
     <string name="versions_config_microphone_check_title">Verificar Microfone</string>
     <string name="versions_config_microphone_check_summary">Verifique se o microfone do sistema está disponível ou confirme se o Launcher recebeu permissão para usar o microfone. Essa verificação garante que você possa usar mods como o Simple Voice Chat, que exigem um microfone.</string>
-    <string name="versions_update_loader">Atualizar o Loader</string>
-    <string name="versions_update_loader_waiting_for_others">Aguardando a conclusão de outras tarefas</string>
-    <string name="versions_update_loader_diff_message">Tem certeza de que deseja alterar o loader do jogo atual?</string>
-    <string name="versions_update_loader_diff_change">Alterar: %1$s %2$s → %3$s</string>
-    <string name="versions_update_loader_diff_remove">Remover: %s</string>
-    <string name="versions_update_loader_diff_load">Carregar: %1$s %2$s</string>
-    <string name="versions_update_loader_error_message">Ocorreu um erro ao instalar o carregador:</string>
-    <string name="versions_update_loader_success_message">A versão do carregador do jogo foi atualizada com sucesso!</string>
     <string name="manage_only_show_valid">Disponível</string>
     <string name="manage_delete_all">Apagar tudo</string>
     <string name="manage_delete_all_message">Tem certeza de que deseja excluir os arquivos selecionados? Esta ação não poderá ser desfeita. Prossiga com cautela.</string>
@@ -1112,7 +1104,6 @@
     <string name="page_title_version_manage">­Gerenciar versões</string>
     <string name="page_title_account_list">Lista de contas</string>
     <string name="page_title_select_files">Selecionar Caminho</string>
-    <string name="versions_install_loader">Instalar Loader</string>
     <string name="unpack_screen_jre25">Ambiente Java 25 (necessário para Minecraft 26.1+)</string>
     <string name="plugin_unsupported_warning">O plugin %s não é compatível com esta versão do jogo. Continuar a usá-lo pode causar o crash, bug de renderer ou travamento no jogo! Tem certeza que vai ignorar o risco e prosseguir?</string>
     <string name="settings_game_native_lib_plugin_title">Plugins da Biblioteca Nativa</string>
@@ -1145,9 +1136,6 @@
     <string name="settings_game_graphics_api_default">Siga as configurações do jogo</string>
     <string name="settings_renderer_surface_title">Usar renderização SurfaceView</string>
     <string name="settings_renderer_surface_summary">Renderiza usando uma camada separada fora da interface do usuário</string>
-    <string name="download_game_version_overwrite">Isso irá sobrescrever a versão existente: %s</string>
-    <string name="download_game_version_overwrite_select">Versão para sobrescrever</string>
-    <string name="download_game_version_overwrite_select_subtitle">Selecione a versão para sobrescrever. Você pode usar este recurso para atualizar/rebaixar a versão selecionada.</string>
     <string name="plugin_download_title">Baixar Plugin</string>
     <string name="plugin_download_summary">Baixe o plugin e instale-o como um aplicativo. Basta reabrir o launcher e ele será carregado automaticamente!</string>
     <string name="settings_game_graphics_api_default_opengl">Definido para OpenGL apenas na primeira inicialização</string>

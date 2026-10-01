@@ -526,7 +526,6 @@
     <string name="notification_jvm_running_name">خدمة ضمان بقاء اللعبة نشطة ومستمرة في الخلفية (JVM)</string>
     <string name="notification_task_service_running">هناك عمليات قيد التشغيل، يُرجى عدم إغلاق المشغّل.</string>
     <string name="download_category_favorites">المُفَضَّلَات</string>
-    <string name="download_game_version_overwrite">سيتم استبدال الإصدار الحالي: %s</string>
     <string name="account_advanced">الإعدادات المتقدمة</string>
     <string name="guide_main_welcome_title">مرحبًا بك في %s!</string>
     <string name="guide_main_welcome_text">دعنا نلقي نظرة سريعة على ميزات الشاشة الرئيسية.</string>

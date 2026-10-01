@@ -84,7 +84,6 @@ import com.movtery.zalithlauncher.ui.androidText
 import com.movtery.zalithlauncher.ui.components.BackgroundCard
 import com.movtery.zalithlauncher.ui.components.CardTitleLayout
 import com.movtery.zalithlauncher.ui.components.TextRailItem
-import com.movtery.zalithlauncher.ui.guide.sendStartGuide
 import com.movtery.zalithlauncher.ui.guide.sendStartGuideOnce
 import com.movtery.zalithlauncher.ui.screens.BackStackNavKey
 import com.movtery.zalithlauncher.ui.screens.NestedNavKey
@@ -118,6 +117,7 @@ import com.movtery.zalithlauncher.utils.file.formatFileSize
 import com.movtery.zalithlauncher.viewmodel.ErrorViewModel
 import com.movtery.zalithlauncher.viewmodel.EventViewModel
 import com.movtery.zalithlauncher.viewmodel.LocalBackgroundViewModel
+import com.movtery.zalithlauncher.viewmodel.ModifyVersionViewModel
 import com.movtery.zalithlauncher.viewmodel.ModpackImportViewModel
 import com.movtery.zalithlauncher.viewmodel.ScreenBackStackViewModel
 import com.movtery.zalithlauncher.viewmodel.sendKeepScreen
@@ -127,6 +127,7 @@ fun MainScreen(
     screenBackStackModel: ScreenBackStackViewModel,
     eventViewModel: EventViewModel,
     modpackImportViewModel: ModpackImportViewModel,
+    modifyVersionViewModel: ModifyVersionViewModel,
     submitError: (ErrorViewModel.ThrowableMessage) -> Unit
 ) {
     val tasks by TaskSystem.tasksFlow.collectAsStateWithLifecycle()
@@ -222,6 +223,7 @@ fun MainScreen(
                     toMainScreen = toMainScreen,
                     eventViewModel = eventViewModel,
                     modpackImportViewModel = modpackImportViewModel,
+                    modifyVersionViewModel = modifyVersionViewModel,
                     submitError = submitError
                 )
 
@@ -485,6 +487,7 @@ private fun NavigationUI(
     toMainScreen: () -> Unit,
     eventViewModel: EventViewModel,
     modpackImportViewModel: ModpackImportViewModel,
+    modifyVersionViewModel: ModifyVersionViewModel,
     submitError: (ErrorViewModel.ThrowableMessage) -> Unit
 ) {
     val backStack = screenBackStackModel.mainScreen.backStack
@@ -593,6 +596,7 @@ private fun NavigationUI(
                 entry<NestedNavKey.VersionSettings> { key ->
                     VersionSettingsScreen(
                         key = key,
+                        modifyViewModel = modifyVersionViewModel,
                         backScreenViewModel = screenBackStackModel,
                         backToMainScreen = toMainScreen,
                         onExportModpack = {

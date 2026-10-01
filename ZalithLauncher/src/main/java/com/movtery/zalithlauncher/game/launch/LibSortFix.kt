@@ -29,7 +29,7 @@ import com.movtery.zalithlauncher.game.versioninfo.models.GameManifest
 class LibSortFix(
     versionInfo: VersionInfo?
 ) {
-    val isCleanroom = versionInfo?.loaderInfo?.loader == ModLoader.CLEANROOM
+    val isCleanroom = versionInfo?.hasLoader(ModLoader.CLEANROOM) == true
 
     private val icu4jLib = "com.ibm.icu:icu4j:"
     private val mojangICU4jLib = "com.ibm.icu:icu4j-core-mojang:"

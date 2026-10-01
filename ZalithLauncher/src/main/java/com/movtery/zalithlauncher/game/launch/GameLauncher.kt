@@ -153,7 +153,7 @@ class GameLauncher(
         val versionInfo = version.getVersionInfo()
         //Fix Forge 1.7.2
         val is172 = (versionInfo?.minecraftVersion ?: "0.0").isEqualTo("1.7.2")
-        if (is172 && (versionInfo?.loaderInfo?.loader == ModLoader.FORGE)) {
+        if (is172 && versionInfo?.hasLoader(ModLoader.FORGE) == true) {
             Logger.debug(TAG, "Is Forge 1.7.2, use the patched sorting method.")
             put("sort.patch", "true")
         }
@@ -179,8 +179,10 @@ class GameLauncher(
         envMap["DRIVER_PATH"] = DriverPluginManager.getDriver(version.getDriver()).path
 
         checkAndUsedJSPH(envMap, runtime)
-        version.getVersionInfo()?.loaderInfo?.getLoaderEnvKey()?.let { loaderKey ->
-            envMap[loaderKey] = "1"
+        version.getVersionInfo()?.loaderInfos?.forEach { info ->
+            info.getLoaderEnvKey()?.let { loaderKey ->
+                envMap[loaderKey] = "1"
+            }
         }
         if (Renderers.isCurrentRendererValid()) {
             setRendererEnv(envMap)
@@ -318,7 +320,7 @@ class GameLauncher(
         val pickedRuntime = RuntimesManager.loadRuntime(runtime)
 
         if (AllSettings.autoPickJavaRuntime.getValue()) {
-            val loaderInfo = version.getVersionInfo()?.loaderInfo
+            val loaderInfo = version.getVersionInfo()?.primaryLoader
             //开启了自动选择，根据游戏需求的版本做选择
             val targetJavaVersion = when (loaderInfo?.loader) {
                 ModLoader.BABRIC -> 17 //Babric 推荐使用 17

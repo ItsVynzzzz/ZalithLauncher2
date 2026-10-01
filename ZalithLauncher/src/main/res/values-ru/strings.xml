@@ -994,14 +994,6 @@
     <string name="game_menu_option_menu_ball_opacity">Прозрачность меню-наложения</string>
     <string name="settings_launcher_dark_mode_title">Тёмный режим</string>
     <string name="notification_data_terracotta_message">Во время мультиплеера лаунчер использует службу переднего плана для отображения текущего статуса соединения, поэтому требуется разрешение на отправку уведомлений.</string>
-    <string name="versions_update_loader">Обновить мод-лоудер</string>
-    <string name="versions_update_loader_waiting_for_others">Ожидание завершения загрузки других задач</string>
-    <string name="versions_update_loader_diff_message">Вы уверены, что хотите изменить мод-лоудер для текущей сборки?</string>
-    <string name="versions_update_loader_diff_change">Изменение: %1$s %2$s → %3$s</string>
-    <string name="versions_update_loader_diff_remove">Удалить: %s</string>
-    <string name="versions_update_loader_diff_load">Установить: %1$s %2$s</string>
-    <string name="versions_update_loader_error_message">При установке мод-лоудера произошла ошибка:</string>
-    <string name="versions_update_loader_success_message">Версия мод-лоудера сборки была успешно обновлена!</string>
     <string name="settings_control_mouse_enable_click_title">Режим тачпада</string>
     <string name="settings_control_mouse_enable_click_summary">Включает управление как на тачпаде: касание — ЛКМ, долгое нажатие — удержание. Но не влияет на обычную мышь или сенсор:)</string>
     <string name="settings_launcher_background_video_volume_title">Громкость видео на заднем фоне</string>
@@ -1065,9 +1057,6 @@
     <string name="files_delete_file">Вы уверены, что хотите удалить %s?</string>
     <string name="notification_jvm_running_name">Служба поддержания активности JVM</string>
     <string name="unpack_screen_jna">Позволяет Minecraft напрямую вызывать низкоуровневые функции ОС.</string>
-    <string name="download_game_version_overwrite">Перезапишет существующую версию: %s</string>
-    <string name="download_game_version_overwrite_select">Версия для перезаписи</string>
-    <string name="download_game_version_overwrite_select_subtitle">Выберите версию для перезаписи. Эту функцию можно использовать для обновления или отката версии</string>
     <string name="version_summary_fools_herd_craft">Хватит наводить порядок в инвентаре — ваши предметы и блоки хотят бегать на свободе вместе с вами!</string>
     <string name="plugin_unsupported_warning">Плагин %s не поддерживается для этой версии игры. Его использование может привести к крашу игры! Вы уверены, что хотите продолжить на свой страх и риск?</string>
     <string name="plugin_download_title">Скачать плагин</string>
@@ -1086,7 +1075,6 @@
     <string name="account_local_uuid_copied">UUID аккаунта %s скопирован</string>
     <string name="versions_config_vibrate_kind_title">Тип вибрации</string>
     <string name="versions_config_vibrate_kind_summary">Выберите тип вибрации при срабатывании TouchController</string>
-    <string name="versions_install_loader">Установить загрузчик</string>
     <string name="versions_export">Экспорт сборки</string>
     <string name="versions_export_type_mcbbs">Сборка формата MCBBS</string>
     <string name="versions_export_type_mcbbs_summary">Может быть импортирована в %s, HMCL и другие лаунчеры</string>

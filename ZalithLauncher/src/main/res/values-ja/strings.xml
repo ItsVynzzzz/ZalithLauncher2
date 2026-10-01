@@ -973,14 +973,6 @@
     <string name="generic_follow_system">システムに従う</string>
     <string name="game_menu_option_menu_ball_opacity">メニューオーバーレイの不透明度</string>
     <string name="settings_launcher_dark_mode_title">ダークモード</string>
-    <string name="versions_update_loader">ローダーをアップデート</string>
-    <string name="versions_update_loader_waiting_for_others">他のアイテムの読み込みの完了を待っています</string>
-    <string name="versions_update_loader_diff_message">現在のゲームローダーを変更してもよろしいですか？</string>
-    <string name="versions_update_loader_diff_change">変更: %1$s %2$s → %3$s</string>
-    <string name="versions_update_loader_diff_remove">削除: %s</string>
-    <string name="versions_update_loader_diff_load">読み込み中: %1$s %2$s</string>
-    <string name="versions_update_loader_error_message">ローダーのインストール中にエラーが発生しました:</string>
-    <string name="versions_update_loader_success_message">ゲームのローダーバージョンが正常に更新されました！</string>
     <string name="notification_data_terracotta_message">マルチプレイセッション中、ランチャーはフォアグラウンドサービスを利用して現在の通信状態を表示するため、通知の許可が必要です。</string>
     <string name="settings_control_mouse_enable_click_title">タッチパッド操作</string>
     <string name="settings_control_mouse_enable_click_summary">画面をタップするとマウスの左クリック、長押しすると左クリックのホールドとして扱われます; この設定は物理マウスコントロールやタップコントロールには影響しません</string>
@@ -1114,12 +1106,8 @@
     <string name="page_title_account_list">アカウントリスト</string>
     <string name="page_title_select_files">パスの選択</string>
     <string name="unpack_screen_jre25">Java 25 環境 (Minecraft 26.1 以降に必要)</string>
-    <string name="versions_install_loader">ローダーのインストール</string>
     <string name="notification_jvm_running_name">JVM キープアライブサービス</string>
     <string name="unpack_screen_jna">Minecraft が低レベルの OS 関数を直接呼び出せるようにします。</string>
-    <string name="download_game_version_overwrite">既存バージョンを上書きしてインストールします: %s</string>
-    <string name="download_game_version_overwrite_select">上書きするバージョン</string>
-    <string name="download_game_version_overwrite_select_subtitle">対象のバージョンを選択してください。この機能で、対象のバージョンをアップグレード/ダウングレードできます</string>
     <string name="version_summary_fools_herd_craft">インベントリの整理はやめましょう。アイテムとブロックはあなたと一緒に暴走したがっています！</string>
     <string name="plugin_unsupported_warning">プラグイン %s はこのバージョンでは対応してません。そのまま使用すると、ゲームがクラッシュする恐れがあります！リスクを無視して続行しますか？</string>
     <string name="plugin_download_title">プラグインをダウンロード</string>
