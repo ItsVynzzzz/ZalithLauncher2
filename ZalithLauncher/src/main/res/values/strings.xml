@@ -420,6 +420,9 @@
     <string name="game_menu_option_input_method">Switch Input Method</string>
     <string name="game_menu_option_auto_show_ime">Auto-show Input Method (SDL)</string>
     <string name="game_menu_option_switch_fps">FPS Display</string>
+    <string name="game_menu_option_fps_display_mode">FPS Display Mode</string>
+    <string name="game_menu_option_fps_display_mode_number">Number</string>
+    <string name="game_menu_option_fps_display_mode_chart">Chart</string>
     <string name="game_menu_option_switch_memory">Memory Display</string>
     <string name="game_menu_option_menu_ball_opacity">Menu Overlay Opacity</string>
     <string name="game_menu_option_send_keycode">Send Keycode</string>
