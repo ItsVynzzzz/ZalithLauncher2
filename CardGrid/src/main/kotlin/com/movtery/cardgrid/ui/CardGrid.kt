@@ -33,7 +33,6 @@ import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -43,7 +42,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -94,6 +92,8 @@ private const val SlotStrokeAlpha = 0.5f
 private val ToolbarHeight = 40.dp
 /** 工具条与卡片边缘的间隙 */
 private val ToolbarGap = 8.dp
+/** 调整态工具条的悬浮层级，置于全部卡片（含拖动虚影）之上 */
+private const val AdjustingBarZIndex = 4f
 
 /**
  * 卡片网格容器
@@ -254,8 +254,18 @@ private fun CardGridCanvas(
                     containerColor = containerColor,
                     contentColor = contentColor,
                     cardBackground = cardBackground,
-                    adjustingBar = adjustingBar,
                     contentDirection = contentDirection
+                )
+            }
+        }
+        val adjustingCard = state.adjustingCardId
+            ?.let { id -> state.cards.firstOrNull { it.id == id } }
+        if (adjustingCard != null && adjustingBar != null) {
+            key(adjustingCard.id) {
+                AdjustingBarOverlay(
+                    state = state,
+                    card = adjustingCard,
+                    adjustingBar = adjustingBar
                 )
             }
         }
@@ -270,7 +280,6 @@ private fun CardSlot(
     containerColor: Color,
     contentColor: Color,
     cardBackground: (@Composable (Modifier) -> Modifier)?,
-    adjustingBar: (@Composable (Modifier, GridCard) -> Unit)?,
     contentDirection: LayoutDirection
 ) {
     val rectProvider: () -> Rect = { state.renderRectOf(card) }
@@ -302,34 +311,48 @@ private fun CardSlot(
                 card.type.content(state.cardStateOf(card), card.id)
             }
         }
-
-        if (adjusting && adjustingBar != null) {
-            val density = LocalDensity.current
-            val barExtentPx = with(density) { (ToolbarHeight + ToolbarGap).toPx() }
-            val cardTopInViewport = state.areaOffsetInRoot.y +
-                state.rectFor(state.effectiveLayout(card)).top - state.viewportTopPx
-            val placeAbove = cardTopInViewport >= barExtentPx
-            val barOffset by animateDpAsState(
-                targetValue = if (placeAbove) {
-                    -(ToolbarHeight + ToolbarGap)
-                } else {
-                    with(density) { rectProvider().height.toDp() } + ToolbarGap
-                },
-                animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
-                label = "cardToolbarOffset"
-            )
-
-            adjustingBar(
-                Modifier
-                    .align(Alignment.TopCenter)
-                    .offset(y = barOffset)
-                    .height(ToolbarHeight)
-                    .zIndex(1f)
-                    .gestureGuard(),
-                card
-            )
-        }
     }
+}
+
+/**
+ * 调整态工具条悬浮层
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun AdjustingBarOverlay(
+    state: CardGridState,
+    card: GridCard,
+    adjustingBar: @Composable (Modifier, GridCard) -> Unit
+) {
+    val density = LocalDensity.current
+    val barExtentPx = with(density) { (ToolbarHeight + ToolbarGap).toPx() }
+    val cardTopInViewport = state.areaOffsetInRoot.y +
+        state.rectFor(state.effectiveLayout(card)).top - state.viewportTopPx
+    val placeAbove = cardTopInViewport >= barExtentPx
+    val barOffset by animateDpAsState(
+        targetValue = if (placeAbove) {
+            -(ToolbarHeight + ToolbarGap)
+        } else {
+            with(density) { state.renderRectOf(card).height.toDp() } + ToolbarGap
+        },
+        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+        label = "cardToolbarOffset"
+    )
+
+    adjustingBar(
+        Modifier
+            .zIndex(AdjustingBarZIndex)
+            .height(ToolbarHeight)
+            .layout { measurable, constraints ->
+                val placeable = measurable.measure(constraints)
+                val rect = state.renderRectOf(card)
+                val x = (rect.center.x - placeable.width / 2f).roundToInt()
+                val y = rect.top.roundToInt() + barOffset.roundToPx()
+                layout(placeable.width, placeable.height) { placeable.place(x, y) }
+            }
+            .gestureGuard(),
+        card
+    )
 }
 
 /**
