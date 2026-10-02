@@ -1488,6 +1488,18 @@ public class SDLActivity extends Activity implements View.OnSystemUiVisibilityCh
 
     public static boolean handleKeyEvent(View v, int keyCode, KeyEvent event, InputConnection ic) {
         if (!SdlBridge.getSdlEnabled()) return false;
+        //输入法（软键盘）合成的可打印字符事件不代表游戏按键：
+        //不生成 SDL 按键事件，仅在文本通道可接收时转为文本提交
+        if ((event.getFlags() & KeyEvent.FLAG_SOFT_KEYBOARD) != 0 && isTextInputEvent(event)) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN && SdlImeController.isInputAccepted()) {
+                if (ic != null) {
+                    ic.commitText(String.valueOf((char) event.getUnicodeChar()), 1);
+                } else {
+                    SDLInputConnection.nativeCommitText(String.valueOf((char) event.getUnicodeChar()), 1);
+                }
+            }
+            return true;
+        }
         int deviceId = event.getDeviceId();
         int source = event.getSource();
 

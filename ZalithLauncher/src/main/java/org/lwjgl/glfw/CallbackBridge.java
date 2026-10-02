@@ -225,8 +225,10 @@ public class CallbackBridge {
         nativeSendCharMods(keychar, modifiers);
         nativeSendChar(keychar);
         if (!SdlBridge.getSdlEnabled()) return;
-        SDLActivity.onNativeKeyDown(EfficientAndroidLWJGLKeycode.getAndroidKeycode(keychar));
-        SDLActivity.onNativeKeyUp(EfficientAndroidLWJGLKeycode.getAndroidKeycode(keychar));
+        //输入法字符只能以 SDL 文本输入形式进入游戏，不能合成按键事件触发绑定
+        if (isTextEventChar(keychar, modifiers) && SDLActivity.isSDLTextInputActive()) {
+            SDLActivity.onNativeTextInput(String.valueOf(keychar));
+        }
     }
 
     public static void sendKeyPress(int keyCode, int modifiers, boolean status) {
