@@ -130,6 +130,12 @@ class GameLauncher(
         }?.takeIf { it.exists() }
 
         CallbackBridge.nativeSetUseInputStackQueue(gameManifest.arguments != null)
+        //Cleanroom 的 LWJGLXX 桥需要字符事件补全暂存的按键事件，见 CallbackBridge.setControlKeyCharPairing
+        CallbackBridge.setControlKeyCharPairing(
+            version.getVersionInfo()?.loaderInfos?.any { info ->
+                info.loader == ModLoader.CLEANROOM
+            } == true
+        )
 
         val customArgs = version.getJvmArgs().takeIf { it.isNotBlank() } ?: AllSettings.jvmArgs.getValue()
         val javaRuntime = getRuntime()
