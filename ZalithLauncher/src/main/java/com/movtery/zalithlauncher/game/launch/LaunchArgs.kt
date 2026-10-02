@@ -409,7 +409,6 @@ class LaunchArgs(
  * @return 无法确定时返回 0（默认按 LWJGL3 处理）
  */
 fun detectLwjglVersion(manifest: GameManifest): Int {
-    var maxVersion = 0
     for (lib in manifest.libraries) {
         val name = lib.name ?: continue
         val versionPrefix = when {
@@ -421,11 +420,9 @@ fun detectLwjglVersion(manifest: GameManifest): Int {
             .takeWhile { it.isDigit() || it == '.' }
             .filter { it != '.' }
             .toIntOrNull()
-        if (intVersion != null && intVersion in 200..999 && intVersion > maxVersion) {
-            maxVersion = intVersion
-        }
+        if (intVersion != null && intVersion in 200..999) return intVersion
     }
-    return maxVersion
+    return 0
 }
 
 /**
