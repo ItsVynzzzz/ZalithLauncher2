@@ -316,11 +316,7 @@ class VMViewModel : ViewModel() {
 
             KeyEvent.KEYCODE_TAB -> sender.sendTab()
 
-            else -> {
-                //输入法产生的字符类按键事件不能转发给游戏
-                val isSoftKeyboard = (keyEvent.flags and KeyEvent.FLAG_SOFT_KEYBOARD) != 0
-                if (!isSoftKeyboard) sender.sendOther(keyEvent)
-            }
+            else -> sender.sendOther(keyEvent)
         }
     }
 
