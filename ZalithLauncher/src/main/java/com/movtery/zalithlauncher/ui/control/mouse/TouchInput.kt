@@ -517,7 +517,26 @@ private fun SimpleMouseCapture(
         syncCaptureState()
 
         if (enabled) {
+            //触控板事件的 x/y 是手指在触控板表面的绝对坐标，不能直接当作位移；
+            //未提供相对位移轴时，改用相邻两次位置的差值来计算位移
+            var touchpadLastPos: Offset? = null
+
             val pointerListener = View.OnCapturedPointerListener { _, event ->
+                val isTouchpad = event.isFromSource(InputDevice.SOURCE_TOUCHPAD)
+
+                //手指按下、抬起会让触控板坐标跳变，位移差值的基准需要随之重建
+                if (isTouchpad) {
+                    when (event.actionMasked) {
+                        MotionEvent.ACTION_DOWN,
+                        MotionEvent.ACTION_POINTER_DOWN,
+                        MotionEvent.ACTION_HOVER_ENTER -> touchpadLastPos = Offset(event.x, event.y)
+
+                        MotionEvent.ACTION_UP,
+                        MotionEvent.ACTION_POINTER_UP,
+                        MotionEvent.ACTION_HOVER_EXIT -> touchpadLastPos = null
+                    }
+                }
+
                 when (event.actionMasked) {
                     MotionEvent.ACTION_HOVER_MOVE, MotionEvent.ACTION_MOVE -> {
                         var deltaX = 0f
@@ -525,8 +544,22 @@ private fun SimpleMouseCapture(
 
                         val relX = event.getAxisValue(MotionEvent.AXIS_RELATIVE_X)
                         val relY = event.getAxisValue(MotionEvent.AXIS_RELATIVE_Y)
-                        deltaX += if (relX != 0f) relX else event.x
-                        deltaY += if (relY != 0f) relY else event.y
+                        if (isTouchpad) {
+                            if (relX != 0f || relY != 0f) {
+                                //相对位移轴可用时直接取轴值
+                                deltaX += relX
+                                deltaY += relY
+                            } else {
+                                touchpadLastPos?.let { last ->
+                                    deltaX += event.x - last.x
+                                    deltaY += event.y - last.y
+                                }
+                                touchpadLastPos = Offset(event.x, event.y)
+                            }
+                        } else {
+                            deltaX += if (relX != 0f) relX else event.x
+                            deltaY += if (relY != 0f) relY else event.y
+                        }
 
                         val historySize = event.historySize
                         for (i in 0 until historySize) {
