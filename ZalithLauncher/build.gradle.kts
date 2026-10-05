@@ -64,7 +64,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = zalithPackageName
+        applicationId = com.vynz.lite
         applicationIdSuffix = ".v2"
         minSdk = 26
         targetSdk = 34
