@@ -64,7 +64,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = com.vynz.lite
+        // VYNZ: ID aplikasi sendiri supaya tidak tabrakan dengan Zalith asli
+        applicationId = "com.vynz.lite"
         applicationIdSuffix = ".v2"
         minSdk = 26
         targetSdk = 34
@@ -77,7 +78,8 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("releaseBuild")
+            // VYNZ: release ditandatangani kunci debug (kunci rilis asli tidak kita punya)
+            signingConfig = signingConfigs.getByName("debugBuild")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -152,7 +154,9 @@ androidComponents {
                         val assetsDir = task.outputDir.get().asFile
                         val tag = "JREAssetsCleanup"
                         logger.lifecycle("[$tag] arch: $projectArch")
-                        val jreList = listOf("jre-8", "jre-17", "jre-21", "jre-25")
+                        // VYNZ-JRE-PRUNE: hapus baris di bawah ini kalau launcher error saat dibuka
+                        listOf("jre-8", "jre-17", "jre-25").forEach { File("$assetsDir/runtimes/$it").deleteRecursively() }
+                        val jreList = listOf("jre-21")
                         jreList.forEach { jreVersion ->
                             val runtimeDir = File("$assetsDir/runtimes/$jreVersion")
                             logger.lifecycle("[$tag] runtimeDir: ${runtimeDir.absolutePath}")
